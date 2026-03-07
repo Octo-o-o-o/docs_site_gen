@@ -255,6 +255,44 @@ Step 3: Govern — Configure approval rules for high-risk operations, set budget
 
 ---
 
+### 19. Guessing Configuration Descriptions
+
+**Wrong:**
+```
+DATABASE_URL → "Database connection URL"  // guessed from variable name alone
+```
+
+**Correct:**
+```
+// Read lib/db.ts:8 → sees: const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+DATABASE_URL → "PostgreSQL connection string for the primary database pool (format: postgresql://user:pass@host:5432/db)"
+```
+
+**Why**: Variable names are often ambiguous. `REDIS_URL` could be for caching, session storage, or pub/sub — only reading the consumption site reveals the actual purpose. Phase 2B.6 requires reading the file where each variable is used, not just where it's defined.
+
+---
+
+### 20. Synthesizing Code Examples When Real Ones Exist
+
+**Wrong:**
+```tsx
+// Quick Start code block — written from scratch
+const client = new ProjectClient({ apiKey: "..." });
+const result = await client.doSomething();  // may not match actual API
+```
+
+**Correct:**
+```tsx
+// from examples/quickstart.ts:12 — verified working code
+const client = new ProjectClient({ apiKey: process.env.API_KEY });
+const agent = await client.agents.create({ name: "my-agent", url: "https://..." });
+// → { id: "ag_abc123", status: "active" }
+```
+
+**Why**: Synthesized examples may contain API errors (wrong method names, incorrect parameter shapes). Examples from test files or `examples/` directories are proven to compile and produce the expected output. Phase 2B.7 collects these specifically for documentation use.
+
+---
+
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
@@ -277,6 +315,9 @@ Step 3: Govern — Configure approval rules for high-risk operations, set budget
 | User rejected content outline | Outline didn't match project priorities | Re-discuss with user at CP2, ask which features matter most |
 | Missing sidebar/layout/nav | Layout file planned but never generated | Run Phase 5.0 Pass 1 file structure check, create missing layout.tsx |
 | Feature cards fewer than planned | Some features dropped during generation | Run Phase 5.0 Pass 2 feature count verification, add missing cards |
+| Config descriptions don't match behavior | Description derived from variable name, not usage | Re-read the source file where variable is consumed (Phase 2B.6) |
+| Quick Start code example has API errors | Example was synthesized, not extracted from tests | Check Phase 2B.7 for verified examples from test/example files |
+| JSON-LD missing from page | Forgot to add script tag in page.tsx | Add `<script type="application/ld+json">` in Server Component (Phase 4.5E) |
 
 ## Recovery Steps
 

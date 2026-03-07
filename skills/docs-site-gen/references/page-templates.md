@@ -200,6 +200,59 @@ Read API router files to extract:
 3. Request/response schemas (Pydantic models)
 4. Docstrings for descriptions
 
+## 6. Configuration Reference Page (`/docs/configuration`)
+
+A structured reference of all environment variables, config options, and CLI flags. One of the highest-value pages for developers setting up the project — every setup question starts here.
+
+**When to include**: Phase 2B.6 found 3+ configuration points.
+
+### Section Structure
+
+```
+1. Hero
+   - Badge: "CONFIGURATION" / "配置参考"
+   - Title: "Configuration Reference"
+   - Subtitle: "All environment variables and configuration options"
+
+2. Quick Setup
+   - Minimal .env example with only the REQUIRED variables
+   - CodeBlock with copy button
+   - "Copy this to get started, then customize below"
+
+3. Configuration Sections (repeat per category)
+   - Section heading: category name (e.g., "Database", "Authentication", "Server")
+   - Table per category:
+     | Variable | Type | Default | Required | Description |
+   - Callout for critical/security-sensitive variables (type="warning")
+   - Code example showing usage context where helpful
+
+4. Complete Reference Table
+   - Single comprehensive table with ALL variables
+   - Sortable by category, required status
+   - For pages with many variables, this supplements the per-category sections
+
+5. Validation & Troubleshooting
+   - Common configuration errors and solutions
+   - How to verify configuration is correct
+   - FaqItem components for frequent setup questions
+```
+
+### Content Sources — Deep Extraction Guide
+
+| Section | Primary Source | How to Extract | Verification |
+|---------|---------------|----------------|--------------|
+| Quick Setup | Phase 2B.6 inventory (required=Yes only) | Filter to required variables, format as `.env` file | Each variable exists in `.env.example` or code |
+| Category sections | Phase 2B.6 inventory (grouped by category) | Group variables by detected category, write description from usage context | Grep each variable in codebase to verify description matches actual usage |
+| Description text | Source files where variable is consumed | Read the file+line from Phase 2B.6, understand what the variable controls | Description must match actual code behavior |
+| Default values | `.env.example`, config schema defaults, code fallbacks | Check `process.env.X \|\| "default"` patterns and schema defaults | Verify default actually works (not a placeholder) |
+
+### Configuration Page-Specific Rules
+
+1. **Security-sensitive variables** (API keys, secrets, passwords, tokens): Use `type="warning"` Callout. Never show real values — use placeholder format: `sk_live_...`, `your-secret-key`
+2. **Variable descriptions must reflect actual code behavior**: Read the file where the variable is consumed. If `CACHE_TTL` is used as `parseInt(process.env.CACHE_TTL) || 3600`, describe it as "Cache time-to-live in seconds (default: 3600)", not just "Cache TTL"
+3. **Group logically**: Database → Auth → External Services → Server → Feature Flags (adapt to project)
+4. **Mark deprecated variables**: If a variable exists in `.env.example` but is not consumed in code, mark as deprecated or omit
+
 ## Style Preset Influence on Templates
 
 Each style preset (from `references/style-presets.md`) modifies templates differently:
@@ -226,6 +279,8 @@ Content quality rules (evidence-based writing, specificity, tier-based depth) ar
 **Features page**: One section per Tier 1 feature with 150-250 word descriptions + bullet list of verified capabilities + API endpoint examples. Tier 2 features go in a card grid (50-100 words each).
 
 **Architecture page**: System diagram (ASCII art in CodeBlock), component responsibilities mapped to actual services, data flow tracing a real request (router → service → model → response), protocol explanations from actual code.
+
+**Configuration page** (`/docs/configuration`): Every variable description must come from reading the consumption site (Phase 2B.6), not guessing from the variable name. Quick Setup section shows only required variables. Security-sensitive variables use `type="warning"` Callout with placeholder values.
 
 ---
 

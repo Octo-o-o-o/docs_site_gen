@@ -548,6 +548,46 @@ import { useTranslation } from "@/i18n";
 // ... all interactive page content with SectionHeading, CodeBlock, etc.
 ```
 
+### JSON-LD Structured Data
+
+Add Schema.org structured data to each `page.tsx` for search engine rich results. This completes the discoverability stack: llms.txt for AI tools, JSON-LD for search engines.
+
+```tsx
+// In page.tsx (Server Component) — render alongside <PageContent />
+export default function Page() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",       // or "HowTo" for getting-started pages
+    headline: "Page Title — Project Name",
+    description: "Concise page description matching metadata.description.",
+    author: {
+      "@type": "Organization",
+      name: "Project Name",       // from Phase 2B.5
+    },
+    isPartOf: {
+      "@type": "WebSite",
+      name: "Project Name",
+    },
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <PageContent />
+    </>
+  );
+}
+```
+
+**Rules:**
+- `headline` and `description` must match the page's `Metadata` export values
+- Use `TechArticle` for reference/architecture docs, `HowTo` for tutorials/getting-started
+- Only include fields with known, factual values — do not fabricate URLs or dates
+- This goes in `page.tsx` (Server Component) so it renders in the initial HTML for search crawlers
+
 ### llms.txt Files
 
 When docs pages are generated, also update these public files:

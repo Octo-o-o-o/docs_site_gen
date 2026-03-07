@@ -2,7 +2,7 @@
 
 [English](README.md) | [中文](README.zh-CN.md)
 
-一个 Claude Code 技能，通过阅读你的实际源代码来生成生产级文档网站 —— 而不是复述你的 README。
+一个通用 AI 编程技能，通过阅读你的实际源代码来生成生产级文档网站 —— 而不是复述你的 README。
 
 你已经发布了产品，现在用几分钟而不是几天来完成文档站。
 
@@ -12,7 +12,7 @@
 
 ## 这个技能做什么
 
-`docs-site-gen` 是一个 [Claude Code 技能](https://docs.anthropic.com/en/docs/claude-code/skills)，用于生成和维护集成到你现有 Web 应用中的完整文档网站。它分 5 个阶段工作：
+`docs-site-gen` 是一个 [AI 编程技能](https://docs.anthropic.com/en/docs/claude-code/skills)，用于生成和维护集成到你现有 Web 应用中的完整文档网站。它分 5 个阶段工作：
 
 1. **设计系统检测** —— 读取你的 `globals.css`、Tailwind 配置和现有页面，匹配你项目的视觉风格。不会生成格格不入的通用模板。
 2. **深度内容挖掘** —— 读取你的路由、模型和服务，构建经过验证的功能清单。文档中的每一项声明都可以追溯到真实代码。
@@ -33,31 +33,79 @@
 
 ## 环境要求
 
-- **Claude Code**（或任何支持 Claude Code 技能的环境）
+- 支持 [SKILL.md 格式](#支持的客户端)的 AI 编程客户端
 - Web 前端项目（推荐 Next.js App Router）
 - Node.js + pnpm/npm（用于验证命令）
 
 ## 安装
 
-### 方式 A：Claude Code CLI
+### 一键安装（推荐）
 
 ```bash
-claude skill install /path/to/docs-site-gen
-```
-
-### 方式 B：手动安装
-
-将 `SKILL.md` 和 `references/` 目录复制到你的 Claude Code 技能目录：
-
-```bash
-# 克隆仓库
 git clone https://github.com/Octo-o-o-o/docs_site_gen.git
-
-# 复制到 Claude Code 技能目录
-mkdir -p ~/.claude/skills/docs-site-gen
-cp docs_site_gen/SKILL.md ~/.claude/skills/docs-site-gen/
-cp -r docs_site_gen/references ~/.claude/skills/docs-site-gen/
+cd docs_site_gen
+./install.sh
 ```
+
+安装器会自动检测你已安装的 AI 客户端，并为所有检测到的客户端设置技能。
+
+```
+$ ./install.sh
+
+docs-site-gen — skill installer
+────────────────────────────────────
+
+[done] Installed for claude → ~/.claude/skills/docs-site-gen
+[done] Installed for cursor → ~/.cursor/skills/docs-site-gen
+[done] Installed for gemini → ~/.gemini/skills/docs-site-gen
+[skip] codex not detected
+[skip] continue not detected
+
+Installed for 3 client(s), skipped 2.
+Restart your AI client to activate the skill.
+```
+
+### 为特定客户端安装
+
+```bash
+./install.sh --client claude    # 仅 Claude Code
+./install.sh --client cursor    # 仅 Cursor
+./install.sh --list             # 查看所有支持的客户端
+```
+
+### 手动安装
+
+```bash
+# 对于任意客户端，模式为：
+mkdir -p ~/.<CLIENT>/skills/docs-site-gen
+cp skills/docs-site-gen/SKILL.md ~/.<CLIENT>/skills/docs-site-gen/
+cp -r skills/docs-site-gen/references ~/.<CLIENT>/skills/docs-site-gen/
+```
+
+### 卸载
+
+```bash
+./install.sh --uninstall
+```
+
+## 支持的客户端
+
+本技能使用通用的 [SKILL.md 格式](https://docs.anthropic.com/en/docs/claude-code/skills) —— 一个被 13+ AI 编程助手采用的跨客户端标准。
+
+| 客户端 | 状态 | 安装路径 |
+|--------|------|----------|
+| Claude Code | 完整支持 | `~/.claude/skills/docs-site-gen/` |
+| Cursor | 完整支持 | `~/.cursor/skills/docs-site-gen/` |
+| Gemini CLI | 完整支持 | `~/.gemini/skills/docs-site-gen/` |
+| Codex | 完整支持 | `~/.codex/skills/docs-site-gen/` |
+| Continue | 完整支持 | `~/.continue/skills/docs-site-gen/` |
+| OpenCode | 完整支持 | `~/.config/opencode/skills/docs-site-gen/` |
+| OpenClaw | 完整支持 | `~/.openclaw/skills/docs-site-gen/` |
+| Kilocode | 完整支持 | `~/.kilocode/skills/docs-site-gen/` |
+| AdaL CLI | 完整支持 | `~/.adal/skills/docs-site-gen/` |
+| CodeBuddy | 完整支持 | `~/.codebuddy/skills/docs-site-gen/` |
+| FactoryAI Droid | 完整支持 | `~/.factory/skills/docs-site-gen/` |
+| Pi Agent | 完整支持 | `~/.pi/skills/docs-site-gen/` |
 
 ## 不是又一个千篇一律的文档模板
 
@@ -85,7 +133,7 @@ cp -r docs_site_gen/references ~/.claude/skills/docs-site-gen/
 ```
 你: "帮我生成一个文档站"
 
-Claude Code:
+AI:
   → 阶段 1：检测你的设计系统（Tailwind + CSS 变量，支持暗色模式）
   → 阶段 2：读取 12 个 API 路由、8 个模型、5 个服务 —— 构建功能清单
   → CP1："我发现了这些设计规范和功能。你偏好哪种风格预设？"
@@ -122,16 +170,28 @@ Claude Code:
 
 ```
 docs-site-gen/
-├── SKILL.md                          # 主技能文件（执行工作流）
-└── references/
-    ├── conventions.md                # 代码模式、组件、i18n 模板
-    ├── templates.md                  # 大型代码模板（布局、搜索、目录、导航）
-    ├── page-templates.md             # 各页面类型的章节结构骨架
-    ├── style-presets.md              # 8 种精选风格预设及配色方案
-    └── anti-patterns.md              # 常见错误和故障排除指南
+├── skills/
+│   └── docs-site-gen/
+│       ├── SKILL.md                      # 主技能文件（执行工作流）
+│       └── references/
+│           ├── content-mining.md         # 阶段 2B 深度内容挖掘工作流
+│           ├── generation-rules.md       # 阶段 4 页面生成规则
+│           ├── validation-rules.md       # 阶段 5 验证工作流
+│           ├── update-mode.md            # 增量更新模式
+│           ├── conventions.md            # 代码模式、组件、i18n
+│           ├── templates.md              # 大型代码模板（布局、搜索、目录）
+│           ├── page-templates.md         # 各页面类型的章节骨架
+│           ├── style-presets.md          # 8 种精选风格预设
+│           └── anti-patterns.md          # 常见错误和故障排除
+├── .claude-plugin/
+│   └── plugin.json                       # Claude Code marketplace 元数据
+├── install.sh                            # 一键安装器
+├── README.md
+├── README.zh-CN.md
+└── LICENSE
 ```
 
-`SKILL.md` 在每次调用时加载。参考文件按需加载，以最小化 token 开销。
+`skills/docs-site-gen/` 是规范源。安装器将 SKILL.md 和 references/ 复制到各客户端的技能目录。参考文件按需加载，以最小化 token 开销。
 
 ## 风格预设
 
@@ -176,12 +236,12 @@ docs-site-gen/
 
 ## 贡献
 
-欢迎贡献。这是一个 Claude Code 技能，所以"源代码"是结构化的 Markdown + 代码模板。
+欢迎贡献。这是一个 AI 编程技能，所以"源代码"是结构化的 Markdown + 代码模板。
 
 需要了解的关键文件：
-- `SKILL.md` —— 执行工作流（5 个阶段、检查点、更新模式）
-- `references/conventions.md` —— 代码模式和组件定义
-- `references/anti-patterns.md` —— 不应该做的事（有助于理解设计决策）
+- `skills/docs-site-gen/SKILL.md` —— 执行工作流（5 个阶段、检查点）
+- `skills/docs-site-gen/references/` —— 按阶段按需加载的详细规则
+- `skills/docs-site-gen/references/anti-patterns.md` —— 不应该做的事（有助于理解设计决策）
 
 ## 许可证
 

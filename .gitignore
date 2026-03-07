@@ -1,0 +1,25 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# IDE-specific skill folders (created by install.sh, not tracked in repo)
+.claude/
+.cursor/
+.gemini/
+.codex/
+.continue/
+.opencode/
+.openclaw/
+.kilocode/
+.adal/
+.codebuddy/
+.factory/
+.agent/
+.pi/

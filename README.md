@@ -2,7 +2,7 @@
 
 [English](README.md) | [中文](README.zh-CN.md)
 
-A Claude Code skill that generates production-quality documentation websites by reading your actual source code — not paraphrasing your README.
+A universal AI coding skill that generates production-quality documentation websites by reading your actual source code — not paraphrasing your README.
 
 You've shipped the product. Now ship the docs in minutes, not days.
 
@@ -12,7 +12,7 @@ You built your project with Claude Code or Codex in record time. But the docs si
 
 ## What This Skill Does
 
-`docs-site-gen` is a [Claude Code Skill](https://docs.anthropic.com/en/docs/claude-code/skills) that generates and maintains full documentation websites integrated into your existing web app. It works in 5 phases:
+`docs-site-gen` is an [AI coding skill](https://docs.anthropic.com/en/docs/claude-code/skills) that generates and maintains full documentation websites integrated into your existing web app. It works in 5 phases:
 
 1. **Design System Detection** — Reads your `globals.css`, Tailwind config, and existing pages to match your project's visual identity. No generic templates that look out of place.
 2. **Deep Content Mining** — Reads your routers, models, and services to build a verified feature inventory. Every claim in the docs traces back to real code.
@@ -33,31 +33,79 @@ You built your project with Claude Code or Codex in record time. But the docs si
 
 ## Requirements
 
-- **Claude Code** (or any environment that supports Claude Code Skills)
+- An AI coding client that supports the [SKILL.md format](#supported-clients)
 - A web frontend project (Next.js App Router recommended)
 - Node.js + pnpm/npm for validation commands
 
 ## Installation
 
-### Option A: Claude Code CLI
+### One-command install (recommended)
 
 ```bash
-claude skill install /path/to/docs-site-gen
-```
-
-### Option B: Manual
-
-Copy the `SKILL.md` and `references/` directory into your Claude Code skills directory:
-
-```bash
-# Clone the repo
 git clone https://github.com/Octo-o-o-o/docs_site_gen.git
-
-# Copy to your Claude Code skills directory
-mkdir -p ~/.claude/skills/docs-site-gen
-cp docs_site_gen/SKILL.md ~/.claude/skills/docs-site-gen/
-cp -r docs_site_gen/references ~/.claude/skills/docs-site-gen/
+cd docs_site_gen
+./install.sh
 ```
+
+The installer auto-detects which AI clients you have installed and sets up the skill for all of them.
+
+```
+$ ./install.sh
+
+docs-site-gen — skill installer
+────────────────────────────────────
+
+[done] Installed for claude → ~/.claude/skills/docs-site-gen
+[done] Installed for cursor → ~/.cursor/skills/docs-site-gen
+[done] Installed for gemini → ~/.gemini/skills/docs-site-gen
+[skip] codex not detected
+[skip] continue not detected
+
+Installed for 3 client(s), skipped 2.
+Restart your AI client to activate the skill.
+```
+
+### Install for a specific client
+
+```bash
+./install.sh --client claude    # Claude Code only
+./install.sh --client cursor    # Cursor only
+./install.sh --list             # See all supported clients
+```
+
+### Manual install
+
+```bash
+# For any client, the pattern is:
+mkdir -p ~/.<CLIENT>/skills/docs-site-gen
+cp skills/docs-site-gen/SKILL.md ~/.<CLIENT>/skills/docs-site-gen/
+cp -r skills/docs-site-gen/references ~/.<CLIENT>/skills/docs-site-gen/
+```
+
+### Uninstall
+
+```bash
+./install.sh --uninstall
+```
+
+## Supported Clients
+
+This skill uses the universal [SKILL.md format](https://docs.anthropic.com/en/docs/claude-code/skills) — a cross-client standard adopted by 13+ AI coding assistants.
+
+| Client | Status | Install Path |
+|--------|--------|-------------|
+| Claude Code | Full Support | `~/.claude/skills/docs-site-gen/` |
+| Cursor | Full Support | `~/.cursor/skills/docs-site-gen/` |
+| Gemini CLI | Full Support | `~/.gemini/skills/docs-site-gen/` |
+| Codex | Full Support | `~/.codex/skills/docs-site-gen/` |
+| Continue | Full Support | `~/.continue/skills/docs-site-gen/` |
+| OpenCode | Full Support | `~/.config/opencode/skills/docs-site-gen/` |
+| OpenClaw | Full Support | `~/.openclaw/skills/docs-site-gen/` |
+| Kilocode | Full Support | `~/.kilocode/skills/docs-site-gen/` |
+| AdaL CLI | Full Support | `~/.adal/skills/docs-site-gen/` |
+| CodeBuddy | Full Support | `~/.codebuddy/skills/docs-site-gen/` |
+| FactoryAI Droid | Full Support | `~/.factory/skills/docs-site-gen/` |
+| Pi Agent | Full Support | `~/.pi/skills/docs-site-gen/` |
 
 ## Not Another Generic Docs Template
 
@@ -85,7 +133,7 @@ Build a complete docs site from scratch for a project that doesn't have one yet.
 ```
 You: "Generate a docs site for this project"
 
-Claude Code:
+AI:
   → Phase 1: Detects your design system (Tailwind + CSS variables, dark mode support)
   → Phase 2: Reads 12 API routers, 8 models, 5 services — builds feature inventory
   → CP1: "I found these design conventions and features. Which style preset do you prefer?"
@@ -122,16 +170,28 @@ The skill re-reads your existing docs content, applies a new style preset (or yo
 
 ```
 docs-site-gen/
-├── SKILL.md                          # Main skill file (execution workflow)
-└── references/
-    ├── conventions.md                # Code patterns, components, i18n templates
-    ├── templates.md                  # Large code templates (layout, search, TOC, nav)
-    ├── page-templates.md             # Section structure skeletons per page type
-    ├── style-presets.md              # 8 curated style presets with color palettes
-    └── anti-patterns.md              # Common mistakes and troubleshooting guide
+├── skills/
+│   └── docs-site-gen/
+│       ├── SKILL.md                      # Main skill (execution workflow)
+│       └── references/
+│           ├── content-mining.md         # Phase 2B deep content mining workflow
+│           ├── generation-rules.md       # Phase 4 page generation rules
+│           ├── validation-rules.md       # Phase 5 validation workflow
+│           ├── update-mode.md            # Incremental update mode
+│           ├── conventions.md            # Code patterns, components, i18n
+│           ├── templates.md              # Large code templates (layout, search, TOC)
+│           ├── page-templates.md         # Section skeletons per page type
+│           ├── style-presets.md          # 8 curated style presets
+│           └── anti-patterns.md          # Common mistakes & troubleshooting
+├── .claude-plugin/
+│   └── plugin.json                       # Claude Code marketplace metadata
+├── install.sh                            # One-command installer
+├── README.md
+├── README.zh-CN.md
+└── LICENSE
 ```
 
-`SKILL.md` is loaded on every invocation. Reference files are loaded on-demand to minimize token cost.
+`skills/docs-site-gen/` is the canonical source. The installer copies SKILL.md and references/ to each client's skill directory. References are loaded on-demand to minimize token cost.
 
 ## Style Presets
 
@@ -176,12 +236,12 @@ Every generated docs site is designed to be consumed by both humans and AI:
 
 ## Contributing
 
-Contributions are welcome. This is a Claude Code Skill, so the "source code" is structured Markdown + code templates.
+Contributions are welcome. This is an AI coding skill, so the "source code" is structured Markdown + code templates.
 
 Key files to understand:
-- `SKILL.md` — The execution workflow (5 phases, checkpoints, update mode)
-- `references/conventions.md` — Code patterns and component definitions
-- `references/anti-patterns.md` — What NOT to do (useful for understanding design decisions)
+- `skills/docs-site-gen/SKILL.md` — The execution workflow (5 phases, checkpoints)
+- `skills/docs-site-gen/references/` — Detailed rules loaded on-demand per phase
+- `skills/docs-site-gen/references/anti-patterns.md` — What NOT to do (useful for understanding design decisions)
 
 ## License
 
