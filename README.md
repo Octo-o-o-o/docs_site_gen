@@ -59,18 +59,28 @@ cp docs_site_gen/SKILL.md ~/.claude/skills/docs-site-gen/
 cp -r docs_site_gen/references ~/.claude/skills/docs-site-gen/
 ```
 
+## Not Another Generic Docs Template
+
+Most docs generators produce cookie-cutter sites that look nothing like your project. This skill works differently:
+
+1. **Reads your design system first** — It inspects your `globals.css`, Tailwind config, CSS variables, color tokens, font stack, and existing pages before generating anything. The output matches your project's visual identity, not a generic template.
+2. **Three maturity levels** — If your project has a full design system (10+ CSS variables, design tokens), the skill uses it directly. If you have partial conventions, it fills the gaps. If you're starting from scratch, pick one of the 8 style presets.
+3. **Your project, your look** — Dark mode support, custom fonts, brand colors, component patterns — all detected and carried through to the docs pages.
+
 ## Usage
 
-Once installed, the skill triggers automatically when you say things like:
+This skill supports three modes of operation:
+
+### 1. Generate New Docs
+
+Build a complete docs site from scratch for a project that doesn't have one yet.
 
 ```
 "Generate a docs site for this project"
 "Create a /docs page"
-"Update the docs to reflect recent changes"
-"Add a features page to the documentation"
 ```
 
-### Typical Workflow
+**Typical flow:**
 
 ```
 You: "Generate a docs site for this project"
@@ -86,13 +96,27 @@ Claude Code:
   → CP3: "Done. Here's what was generated. Run `pnpm build` to verify."
 ```
 
-### Updating Existing Docs
+### 2. Update Docs After Code Changes
+
+When you ship new features, the skill incrementally updates your existing docs — no full rewrite needed.
 
 ```
 "I added push notifications — update the docs"
+"We added a new billing module, update the docs to include it"
 ```
 
 The skill enters **Incremental Update Mode**: scans the new code, detects what changed, produces a targeted update plan, then uses surgical edits to update only the affected sections. Your custom content is preserved.
+
+### 3. Restyle Existing Docs
+
+Unhappy with how your current docs look? Keep the content, change the presentation.
+
+```
+"Restyle the docs page with a Vercel-inspired look"
+"The docs feel outdated — regenerate with a cleaner style but keep the content"
+```
+
+The skill re-reads your existing docs content, applies a new style preset (or your updated design system), and regenerates the pages while preserving your verified content and custom sections.
 
 ## File Structure
 
