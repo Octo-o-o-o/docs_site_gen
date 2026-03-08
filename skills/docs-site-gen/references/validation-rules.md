@@ -60,6 +60,13 @@ For each page, verify every section from the CP2 outline exists AND feature desc
 | public/llms.txt | Always | ✅/❌ | |
 | public/llms-full.txt | Always | ✅/❌ | |
 | <link rel="llms-txt"> in root layout | Always | ✅/❌ | |
+| app/sitemap.ts (docs entries) | SEO = Yes | ✅/❌/N/A | |
+| app/robots.ts (allows /docs + AI crawlers) | SEO = Yes | ✅/❌/N/A | |
+| BreadcrumbList JSON-LD (sub-pages) | SEO = Yes | ✅/❌/N/A | |
+| FAQPage JSON-LD (pages with FaqItem) | SEO = Yes, if applicable | ✅/❌/N/A | |
+| SoftwareApplication JSON-LD (/docs) | SEO = Yes | ✅/❌/N/A | |
+| hreflang in metadata | SEO = Yes + i18n-Multi | ✅/❌/N/A | |
+| robots: { index: false } in metadata | SEO = No | ✅/❌/N/A | |
 
 ### i18n Completeness
 | Check | Status |
@@ -122,13 +129,44 @@ After Pass 1 gaps are fixed, verify the generated output works as a coherent who
    - Run project's i18n check script if available (e.g., `npm run i18n:check`)
    - If no script: manually verify both language files have matching keys
 
-## 5.2 AI-Friendly Validation
+## 5.2 AI-Friendly & SEO Validation
+
+**AI-readability checks** (always run):
 
 1. Verify all `<h2>`/`<h3>` tags have `id` attributes
 2. Verify `public/llms.txt` and `public/llms-full.txt` exist and reflect the new docs
 3. Verify `<link rel="llms-txt">` exists in root layout's `<head>`
 4. Verify the page is a Server/Client split (page.tsx exports metadata, content.tsx has "use client")
-5. Verify each `page.tsx` contains a `<script type="application/ld+json">` tag with valid JSON-LD (`@context`, `@type`, `headline`, `description` fields present)
+5. Verify each `page.tsx` contains `<script type="application/ld+json">` tag(s) with valid JSON-LD (`@context`, `@type`, `headline`, `description` fields present)
+
+**SEO checks** (conditional on Step 3.2 toggle):
+
+**If SEO = Yes** — full discoverability validation:
+
+6. **Sitemap**: Verify `app/sitemap.ts` exists and includes entries for ALL generated docs pages (count must match).
+7. **Robots**: Verify `app/robots.ts` (or `public/robots.txt`) does not disallow `/docs`. Verify AI crawler rules (GPTBot, ChatGPT-User, etc.) are present.
+8. **Metadata completeness** per page — verify each `page.tsx` has:
+   - Title under 60 chars, containing primary keyword from keyword map
+   - Description under 160 chars, containing primary + secondary keyword
+   - `robots` with `"max-snippet": -1, "max-image-preview": "large"`
+   - Page metadata does NOT contain `index: false`
+9. **Keyword placement** — for each page, verify:
+   - H1 (hero title) contains primary keyword (only ONE h1 per page)
+   - Primary keyword appears in the first 100 words of body content
+   - URL slug is short and keyword-containing
+10. **hreflang** (when i18n-Multi): Verify `alternates.languages` is set in Metadata with correct locale-URL mappings.
+11. **Structured data richness** — verify:
+    - Sub-pages have `BreadcrumbList` JSON-LD with correct hierarchy
+    - Pages with FaqItem components have `FAQPage` JSON-LD with matching Q&A pairs
+    - Overview page (`/docs`) has `SoftwareApplication` JSON-LD
+    - Getting Started page has `HowTo` JSON-LD with `HowToStep` items
+12. **Internal link quality**: Verify anchor text on internal `<Link>` tags is descriptive (not "click here" or "learn more" without context).
+
+**If SEO = No**:
+
+6. Verify every docs `page.tsx` has `robots: { index: false, follow: false }` in its Metadata export.
+7. Verify docs pages are NOT listed in `app/sitemap.ts`.
+8. Verify no BreadcrumbList/FAQPage/SoftwareApplication JSON-LD was generated (skip rich structured data when noindex).
 
 ## 5.3 Content Quality Audit
 

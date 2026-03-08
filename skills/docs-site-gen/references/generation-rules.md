@@ -102,26 +102,219 @@ After generating docs pages, update (or create) the project's LLM-readable files
 
 Each `page.tsx` MUST export a complete `Metadata` object. Use the enhanced template from `references/conventions.md` (Server/Client Split Template). Rules:
 
-1. **Title format**: `"{Page Title} — {Project Name}"` (e.g., `"Documentation — AgentPlanet"`, `"Self-Host Guide — AgentPlanet"`). Derive page title from the Phase 3.4 content outline's Hero section. Keep under 60 characters.
-2. **Description**: One sentence summarizing the page content. Under 160 characters. Include primary keywords from Phase 2B.5 project identity. No generic filler — each page's description must be unique.
-3. **OpenGraph**: Include `title`, `description`, `type: "website"`, and `siteName` (project name). If the project has an OG image, include `images`.
+1. **Title format**: Primary keyword near the front. Format: `"{Primary Keyword} — {Project Name}"` (e.g., `"AI Agent Management Platform — AgentPlanet"`, `"Self-Host Guide — AgentPlanet"`). Derive from the keyword map (Step 3.2.1) + Phase 3.4 outline. Keep under 60 characters.
+2. **Description**: One sentence answering the user's likely search query. Under 160 characters. Include primary keyword + 1 secondary keyword naturally. No generic filler — each page's description must be unique and compelling enough to click.
+3. **OpenGraph**: Include `title`, `description`, `type: "website"`, and `siteName` (project name). If the project has an OG image, include `images` (recommended: 1200×630px).
 4. **Twitter card**: Include `card: "summary_large_image"`, `title`, and `description`.
 5. **Canonical URL**: Set `alternates.canonical` to the page's path (e.g., `"/docs"`, `"/docs/self-host"`).
+6. **Rich snippet robots** (when SEO = Yes): Add `robots` metadata to enable maximum preview in search results:
+   ```typescript
+   robots: {
+     index: true,
+     follow: true,
+     "max-snippet": -1,           // Allow full-length text snippet
+     "max-image-preview": "large", // Allow large image preview
+     "max-video-preview": -1,      // Allow full video preview
+   }
+   ```
+7. **`hreflang` for bilingual docs** (when i18n-Multi is detected): Set `alternates.languages` so Google knows about language variants:
+   ```typescript
+   alternates: {
+     canonical: "/docs",
+     languages: {
+       "en-US": "/en/docs",  // Adjust to project's i18n URL structure
+       "zh-CN": "/zh/docs",
+     },
+   }
+   ```
+   Adapt URL patterns to match the project's actual i18n routing (path-based `/en/docs`, subdomain-based `en.domain.com/docs`, or query-based `?lang=en`). If the project uses a single URL with client-side locale switching, omit `alternates.languages` and rely on the `<html lang>` attribute instead.
+
+**Keyword placement rules** (when SEO = Yes and keyword map exists from Step 3.2.1):
+
+These rules apply the keyword map to actual page content. All placement must feel natural — never force keywords at the cost of readability.
+
+1. **Title tag**: Primary keyword near the beginning (see rule 1 above).
+2. **Meta description**: Primary + 1 secondary keyword, phrased as a compelling answer to the search query.
+3. **H1** (hero title): Contains primary keyword. Only ONE `<h1>` per page.
+4. **H2 headings**: Each major section heading should incorporate a secondary keyword or feature name where natural (e.g., "Key Features" → "Core Features for AI Agent Management").
+5. **First 100 words**: Include the primary keyword naturally in the opening paragraph ("What is [Project]?" section).
+6. **URL slug**: Short, lowercase, keyword-containing (e.g., `/docs/getting-started` not `/docs/initial-setup-and-configuration-guide-for-new-users`).
+7. **Image alt text**: When docs include screenshots or diagrams, write descriptive alt text that includes relevant keywords (e.g., `alt="AgentPlanet architecture diagram showing MCP protocol flow"` not `alt="diagram"`).
+8. **Internal link anchor text**: Use descriptive text containing the target page's primary keyword (e.g., `<Link href="/docs/architecture">system architecture and protocol design</Link>` not `<Link href="/docs/architecture">click here</Link>`).
 
 **Favicon and site-level metadata** — check the project's root `layout.tsx` (or `app/layout.tsx`):
 - If favicon/icons are already configured → do NOT modify
 - If missing → note in CP3 output as a recommendation (do not auto-generate favicons, as they require design assets)
 - Verify `<link rel="llms-txt">` tag exists (from step C above)
 
+**F. Search Engine Discoverability (conditional on SEO toggle from Step 3.2)**
+
+The SEO toggle controls whether docs pages are actively made discoverable by Google and other search engines. This affects sitemap, robots, and metadata behavior.
+
+**If SEO = Yes (default)**:
+
+1. **`app/sitemap.ts`** — Generate or update the dynamic sitemap to include all docs pages:
+   ```typescript
+   // app/sitemap.ts
+   import type { MetadatRoute } from "next";
+
+   export default function sitemap(): MetadataRoute.Sitemap {
+     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://your-domain.com";
+
+     // ... existing sitemap entries ...
+
+     const docsPages = [
+       { url: `${baseUrl}/docs`, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 0.8 },
+       // Add one entry per generated docs page:
+       // { url: `${baseUrl}/docs/features`, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 0.7 },
+       // { url: `${baseUrl}/docs/architecture`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.6 },
+     ];
+
+     return [...existingEntries, ...docsPages];
+   }
+   ```
+   - If `app/sitemap.ts` already exists: **append** docs entries (use Edit tool, do NOT overwrite)
+   - If no sitemap exists: create `app/sitemap.ts` with docs entries
+   - Priority: `/docs` overview = 0.8, sub-pages = 0.6-0.7
+   - `changeFrequency`: "weekly" for overview, "monthly" for architecture/API reference
+
+2. **`app/robots.ts`** — Ensure robots.txt allows crawling `/docs` for both search engines and AI crawlers:
+   ```typescript
+   // app/robots.ts
+   import type { MetadataRoute } from "next";
+
+   export default function robots(): MetadataRoute.Robots {
+     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://your-domain.com";
+     return {
+       rules: [
+         { userAgent: "*", allow: "/" },
+         // Explicitly allow AI crawlers to index documentation
+         { userAgent: "GPTBot", allow: "/docs" },
+         { userAgent: "ChatGPT-User", allow: "/docs" },
+         { userAgent: "Claude-Web", allow: "/docs" },
+         { userAgent: "Amazonbot", allow: "/docs" },
+         { userAgent: "CCBot", allow: "/docs" },
+       ],
+       sitemap: `${baseUrl}/sitemap.xml`,
+     };
+   }
+   ```
+   - If `app/robots.ts` already exists: verify `/docs` is not in a `disallow` list. If it is, remove it. Append AI crawler rules if missing.
+   - If no robots file exists: create `app/robots.ts` with the above template.
+   - If a static `public/robots.txt` exists instead: check it allows `/docs`, add `Sitemap:` directive and AI crawler rules if missing.
+
+3. **Page metadata**: Use enhanced metadata as defined in section 4.5D above (includes rich snippet robots and hreflang when applicable).
+
+**If SEO = No**:
+
+1. **Skip sitemap generation** — Do NOT add docs pages to `app/sitemap.ts`.
+2. **Skip robots.txt changes** — Do NOT modify `app/robots.ts` or `public/robots.txt`.
+3. **Add noindex to each page's Metadata**:
+   ```typescript
+   export const metadata: Metadata = {
+     title: "Documentation — ProjectName",
+     description: "...",
+     robots: { index: false, follow: false },
+     // ... rest of metadata (OG, Twitter, canonical still included for link previews)
+   };
+   ```
+   This tells Google not to index these pages while still allowing rich link previews when shared directly.
+
 **E. JSON-LD Structured Data (per page)**
 
 Add Schema.org structured data to each `page.tsx` for search engine rich results. This completes the discoverability stack (llms.txt for AI tools, JSON-LD for search engines). See `references/conventions.md` for the code template.
 
-1. Render a `<script type="application/ld+json">` tag in each `page.tsx` (Server Component) alongside `<PageContent />`
-2. Use `TechArticle` for reference/architecture docs, `HowTo` for getting-started/tutorial pages
-3. `headline` and `description` must match the page's `Metadata` export values
-4. `author.name` should be the project name or organization (from Phase 2B.5)
-5. Only include fields with known, factual values — do not fabricate URLs or dates
+**Base rules**:
+1. Render `<script type="application/ld+json">` tag(s) in each `page.tsx` (Server Component) alongside `<PageContent />`
+2. `headline` and `description` must match the page's `Metadata` export values
+3. `author.name` should be the project name or organization (from Phase 2B.5)
+4. Only include fields with known, factual values — do not fabricate URLs or dates
+5. A page can have **multiple** JSON-LD blocks (e.g., TechArticle + BreadcrumbList)
+
+**Schema type selection per page**:
+
+| Page Type | Primary Schema | Additional Schemas |
+|-----------|---------------|-------------------|
+| Overview / Landing (`/docs`) | `TechArticle` | `SoftwareApplication` + `BreadcrumbList` |
+| Features | `TechArticle` | `BreadcrumbList` |
+| Architecture | `TechArticle` | `BreadcrumbList` |
+| Getting Started | `HowTo` (with `HowToStep` items) | `BreadcrumbList` |
+| API Reference | `TechArticle` | `BreadcrumbList` |
+| Configuration | `TechArticle` | `BreadcrumbList` |
+| FAQ (or any page with FaqItem components) | `FAQPage` | `BreadcrumbList` |
+
+**Schema templates**:
+
+a. **`BreadcrumbList`** — REQUIRED for every sub-page in multi-page docs. Generates rich breadcrumb trails in Google results:
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://domain.com" },
+    { "@type": "ListItem", "position": 2, "name": "Documentation", "item": "https://domain.com/docs" },
+    { "@type": "ListItem", "position": 3, "name": "Architecture", "item": "https://domain.com/docs/architecture" }
+  ]
+}
+```
+
+b. **`FAQPage`** — When a page contains FaqItem/collapsible Q&A components. Enables rich FAQ snippets in Google search (expandable answers directly in results):
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I deploy ProjectName?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "You can deploy ProjectName using Docker..."
+      }
+    }
+  ]
+}
+```
+Extract Q&A pairs from the i18n content used by FaqItem components. `text` values must match the actual rendered answer text.
+
+c. **`SoftwareApplication`** — For the main docs overview page (`/docs`) only. Enables rich product info in search results:
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "ProjectName",
+  "description": "One-line pitch from Phase 2B.5",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Cross-platform",
+  "url": "https://domain.com",
+  "author": { "@type": "Organization", "name": "OrgName" },
+  "license": "https://opensource.org/licenses/MIT"
+}
+```
+Only include `offers` if pricing is verified. Only include `license` if detected in `package.json` or `LICENSE` file.
+
+d. **`HowTo`** — For Getting Started / tutorial pages. Use proper `HowToStep` items instead of generic text:
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "Getting Started with ProjectName",
+  "description": "...",
+  "step": [
+    {
+      "@type": "HowToStep",
+      "name": "Install dependencies",
+      "text": "Run npm install project-name to install..."
+    },
+    {
+      "@type": "HowToStep",
+      "name": "Configure environment",
+      "text": "Copy .env.example to .env and set..."
+    }
+  ]
+}
+```
+Extract steps from the actual Getting Started content. Each step's `text` must match the rendered content.
 
 ## 4.6 Evidence-Based Content Generation
 

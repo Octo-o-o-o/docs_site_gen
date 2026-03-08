@@ -212,6 +212,35 @@ This phase combines style selection, audience confirmation, and detailed content
 Use `AskUserQuestion` to confirm:
 1. **Audience**: Developers / Operators / Decision-makers / All audiences
 2. **Content depth**: Product overview (~800 words) / Technical introduction (~1500 words) / Comprehensive guide (~2500 words)
+3. **Search engine visibility** (SEO toggle): Whether docs pages should be discoverable by Google and AI search engines. Default: Yes.
+   - **Yes (recommended)**: Full SEO stack — keyword strategy, sitemap.xml, robots.txt, hreflang, rich structured data (BreadcrumbList, FAQPage, SoftwareApplication), AI crawler allowance.
+   - **No**: Adds `robots: { index: false, follow: false }` to each page's Metadata, skips sitemap/keyword/structured-data generation. Use for internal/private docs.
+
+#### Step 3.2.1: SEO Keyword Strategy (when SEO = Yes)
+
+If the user selected SEO = Yes, build a keyword strategy before the content outline. This step ensures docs pages rank for the terms users actually search for.
+
+1. **Extract seed keywords** from Phase 2B.5 project identity:
+   - Project name and common variants (e.g., "AgentPlanet", "Agent Planet", "agent-planet")
+   - Problem domain terms (e.g., "AI agent management", "LLM orchestration")
+   - Core technology terms from tech stack (e.g., "MCP server", "A2A protocol", "Next.js")
+   - Target audience search terms (e.g., "deploy AI agents", "manage LLM costs")
+
+2. **Research related search terms** (use WebSearch):
+   - Search for `"{problem domain}" open source` to find how competitors describe the space
+   - Search for `"{core feature}" tutorial OR guide OR documentation` to find terms users actually search for
+   - Identify 2-3 long-tail phrases per planned page (e.g., "how to self-host AI agent platform")
+
+3. **Produce a Keyword Map** — assign primary and secondary keywords per page:
+
+   | Page | Primary Keyword | Secondary Keywords | Long-tail Phrases |
+   |------|----------------|-------------------|-------------------|
+   | /docs | {project name} documentation | {domain terms} | "what is {project name}" |
+   | /docs/getting-started | {project} setup guide | install, deploy, configure | "how to set up {project}" |
+   | /docs/features | {project} features | {top feature names} | "{project} vs {competitor}" |
+   | /docs/architecture | {project} architecture | tech stack, {protocol names} | "how {project} works" |
+
+This keyword map feeds into Step 3.4 (content outline includes keyword assignments) and Phase 4 (keyword placement in metadata, headings, and body text). See `references/generation-rules.md` section 4.5D for placement rules.
 
 #### Step 3.3: Documentation Planning
 
@@ -251,7 +280,7 @@ Generate pages following the resolved design conventions. Key areas covered:
 2. **Design System Application** — Apply Level A/B/C design conventions from Phase 1
 3. **Code Conventions** — Match existing codebase style (imports, CSS approach, component patterns)
 4. **Reusable Components** — Reuse existing > import from existing docs > create new. Include TableOfContents, Breadcrumbs, PrevNextNav, Callout as needed
-5. **AI-Friendly Documentation (REQUIRED)** — SSR rendering, section anchors on all h2/h3, llms.txt generation, page metadata/SEO, JSON-LD structured data
+5. **AI-Friendly & SEO Documentation (REQUIRED)** — SSR rendering, section anchors on all h2/h3, llms.txt generation, keyword-optimized metadata, rich JSON-LD (BreadcrumbList/FAQPage/SoftwareApplication/HowTo), hreflang for bilingual, AI crawler allowance, sitemap/robots
 6. **Evidence-Based Content** — Write from verified evidence, match depth to tier, specificity over adjectives, prefer verified code examples
 7. **i18n Key Generation** — Adapt to detected i18n level (Multi/Single/None)
 8. **Navigation Updates** — Update homepage and footer docs links
