@@ -39,15 +39,23 @@ For each page, verify every section from the CP2 outline exists AND feature desc
 | /docs | CTA | ✅/❌ | |
 | /docs | Footer | ✅/❌ | |
 
+### Navigation Layout (from Step 3.3.1)
+| Check | Condition | Status |
+|-------|-----------|--------|
+| Layout mode matches choice | Mode A/B/C from CP2 | ✅/❌ |
+| layout.tsx exists | Mode B or C only | ✅/❌/N/A |
+| layout.tsx type correct | Header nav (B) or Sidebar nav (C) | ✅/❌/N/A |
+| Mobile navigation works | Mode B: hamburger→dropdown; Mode C: hamburger→drawer | ✅/❌/N/A |
+| Sidebar page grouping matches plan | Mode C only | ✅/❌/N/A |
+
 ### Structural Components
 | Component | Condition | Exists? | Status |
 |-----------|-----------|---------|--------|
-| Docs layout with sidebar/nav | 2+ pages planned | ✅/❌ | |
-| CMD+K search component | 2+ pages planned | ✅/❌ | |
+| CMD+K search component | Mode B or C (skip for Mode A) | ✅/❌/N/A | |
 | SectionHeading usage | All h2/h3 tags | ✅/❌ | |
-| On-page TOC (right-side) | Page has 5+ sections | ✅/❌ | |
-| Breadcrumbs | 2+ pages, sub-pages | ✅/❌ | |
-| Prev/Next navigation | 2+ pages planned | ✅/❌ | |
+| On-page TOC (right-side) | Mode A: always; Mode B/C: pages with 5+ sections | ✅/❌ | |
+| Breadcrumbs | Mode B/C, sub-pages | ✅/❌/N/A | |
+| Prev/Next navigation | Mode B/C | ✅/❌/N/A | |
 | Callout components | Warnings/tips in content | ✅/❌ | |
 | Navigation links updated | Homepage docs link points to /docs | ✅/❌ | |
 | Page metadata (title + description + OG + Twitter) | Every page.tsx | ✅/❌ | |
@@ -89,15 +97,16 @@ After Pass 1 gaps are fixed, verify the generated output works as a coherent who
    - i18n keys used in `t("...")` calls exist in the language files
    - Internal `<Link href="...">` targets exist as actual routes
 
-2. **Navigation coherence**:
-   - If docs layout exists: does it list ALL generated sub-pages in its nav items?
-   - Does each sub-page render correctly within the layout (no duplicate nav, no missing wrapper)?
-   - Do "Back to Home" and docs nav links point to valid routes?
+2. **Navigation coherence** (layout-specific):
+   - **Mode A (one-page)**: Right-side TOC lists all major sections? Anchor IDs match TOC items? Smooth scroll works?
+   - **Mode B (header nav)**: Header lists ALL generated pages? Mobile hamburger menu includes all pages? Active page highlighting works?
+   - **Mode C (sidebar nav)**: Sidebar groups include ALL generated pages? Page grouping matches Step 3.3.1 plan? Mobile drawer includes all groups? Active page highlighting works?
+   - All layouts: "Back to Home" link points to valid route? Nav order is logical (Overview first, then by importance)?
 
 3. **Cross-page consistency**:
    - Do all pages use the same spacing convention (e.g., `mb-12` between sections)?
    - Do all pages use `SectionHeading` for h2/h3 (not bare `<h2>` tags)?
-   - Is the docs layout nav order logical (Overview first, then by importance)?
+   - Is the nav order logical and matches PrevNextNav link order?
 
 4. **Feature card count verification**:
    - Count feature cards in generated code vs planned count in outline

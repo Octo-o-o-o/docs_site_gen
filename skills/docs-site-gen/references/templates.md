@@ -2,9 +2,13 @@
 
 Large, copy-paste-ready code templates for docs generation. Referenced by `conventions.md` and SKILL.md at specific steps — only read this file when generating multi-page docs or when a specific template is needed.
 
-## Docs Layout Template (Multi-Page)
+## Docs Layout Templates
 
-When generating multiple docs pages, create a shared layout with sidebar navigation:
+Two layout templates for multi-page docs, selected based on Step 3.3.1 navigation layout choice. For one-page mode (Layout Mode A), no `layout.tsx` is needed.
+
+### Docs Layout Template (Header Nav) — Layout Mode B
+
+Horizontal nav links in a sticky top bar. Best for 3-5 pages with distinct topics.
 
 ```tsx
 // app/docs/layout.tsx
@@ -12,6 +16,7 @@ When generating multiple docs pages, create a shared layout with sidebar navigat
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { useTranslation } from "@/i18n";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { LanguageSwitcher } from "@/components/shell/language-switcher";
@@ -24,9 +29,19 @@ const NAV_ITEMS = [
   { href: "/docs/api", key: "docs.nav.api" },
 ];
 
+function MenuIcon(p: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+    </svg>
+  );
+}
+
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { t } = useTranslation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg)" }}>
@@ -41,6 +56,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
           <Link href="/" className="text-sm" style={{ color: "var(--text-3)" }}>
             {t("docs.backHome")}
           </Link>
+          {/* Desktop nav */}
           <div className="hidden sm:flex items-center gap-1">
             {NAV_ITEMS.map((item) => (
               <Link key={item.href} href={item.href}
@@ -53,12 +69,35 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
               </Link>
             ))}
           </div>
+          {/* Mobile hamburger */}
+          <button className="sm:hidden p-1" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  style={{ color: "var(--text-2)" }}>
+            <MenuIcon />
+          </button>
         </div>
         <div className="flex items-center gap-2">
+          {/* SearchButton goes here */}
           <LanguageSwitcher />
           <ThemeToggle />
         </div>
       </nav>
+
+      {/* Mobile dropdown menu */}
+      {mobileMenuOpen && (
+        <div className="sm:hidden px-4 py-2" style={{ background: "var(--bg-elevated)", borderBottom: "1px solid var(--border)" }}>
+          {NAV_ITEMS.map((item) => (
+            <Link key={item.href} href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-md text-sm no-underline"
+                  style={{
+                    color: pathname === item.href ? "var(--accent)" : "var(--text-2)",
+                    background: pathname === item.href ? "var(--accent-soft)" : "transparent"
+                  }}>
+              {t(item.key)}
+            </Link>
+          ))}
+        </div>
+      )}
 
       {children}
     </div>
@@ -66,9 +105,152 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-**When to use**: Create this layout when generating 2+ docs pages. Individual pages then omit their own nav and use `<main>` directly.
+**When to use**: Layout Mode B — 3-5 docs pages with horizontal navigation.
 
-**Search integration**: When generating 2+ pages, also include the SearchButton and SearchDialog below in this layout.
+### Docs Layout Template (Sidebar Nav) — Layout Mode C
+
+Persistent left sidebar with grouped navigation tree. Best for 6+ pages or deep documentation.
+
+```tsx
+// app/docs/layout.tsx
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { useTranslation } from "@/i18n";
+
+// Group pages by category — adapt to project's actual page set
+const NAV_GROUPS = [
+  {
+    labelKey: "docs.nav.group.gettingStarted",
+    items: [
+      { href: "/docs", key: "docs.nav.overview" },
+      { href: "/docs/getting-started", key: "docs.nav.gettingStarted" },
+    ],
+  },
+  {
+    labelKey: "docs.nav.group.guides",
+    items: [
+      { href: "/docs/features", key: "docs.nav.features" },
+      { href: "/docs/architecture", key: "docs.nav.architecture" },
+      { href: "/docs/self-host", key: "docs.nav.selfHost" },
+    ],
+  },
+  {
+    labelKey: "docs.nav.group.reference",
+    items: [
+      { href: "/docs/api", key: "docs.nav.api" },
+      { href: "/docs/configuration", key: "docs.nav.configuration" },
+    ],
+  },
+];
+
+function MenuIcon(p: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...p}>
+      <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+    </svg>
+  );
+}
+
+function SidebarContent({ pathname, t }: { pathname: string; t: (key: string) => string }) {
+  return (
+    <div className="space-y-6 py-6 px-4">
+      <Link href="/" className="flex items-center gap-2 text-sm px-3 py-2 rounded-md no-underline transition-colors"
+            style={{ color: "var(--text-3)" }}>
+        <span>←</span> {t("docs.backHome")}
+      </Link>
+
+      {/* SearchButton goes here */}
+
+      {NAV_GROUPS.map((group) => (
+        <div key={group.labelKey}>
+          <div className="text-xs font-semibold uppercase tracking-wider px-3 mb-2"
+               style={{ color: "var(--text-3)" }}>
+            {t(group.labelKey)}
+          </div>
+          <ul className="space-y-0.5">
+            {group.items.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href}
+                      className="block px-3 py-1.5 rounded-md text-sm transition-colors no-underline"
+                      style={{
+                        color: pathname === item.href ? "var(--accent)" : "var(--text-2)",
+                        background: pathname === item.href ? "var(--accent-soft)" : "transparent",
+                        fontWeight: pathname === item.href ? 500 : 400,
+                      }}>
+                  {t(item.key)}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function DocsLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const { t } = useTranslation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  return (
+    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
+      {/* Mobile top bar */}
+      <div className="lg:hidden sticky top-0 z-50 flex items-center justify-between px-4 py-3"
+           style={{
+             background: "color-mix(in srgb, var(--bg) 85%, transparent)",
+             backdropFilter: "blur(12px)",
+             borderBottom: "1px solid var(--border)"
+           }}>
+        <button onClick={() => setSidebarOpen(true)} className="p-1.5 rounded-md"
+                style={{ color: "var(--text-2)" }}>
+          <MenuIcon />
+        </button>
+        <Link href="/docs" className="text-sm font-medium no-underline" style={{ color: "var(--text-1)" }}>
+          {t("docs.title")}
+        </Link>
+        <div className="w-8" /> {/* Spacer for centering */}
+      </div>
+
+      {/* Mobile sidebar drawer */}
+      {sidebarOpen && (
+        <div className="lg:hidden fixed inset-0 z-[60]" onClick={() => setSidebarOpen(false)}>
+          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.4)" }} />
+          <aside className="relative w-72 h-full overflow-y-auto"
+                 style={{ background: "var(--bg)", borderRight: "1px solid var(--border)" }}
+                 onClick={(e) => e.stopPropagation()}>
+            <SidebarContent pathname={pathname} t={t} />
+          </aside>
+        </div>
+      )}
+
+      {/* Desktop: sidebar + content grid */}
+      <div className="lg:grid lg:grid-cols-[260px_1fr]">
+        <aside className="hidden lg:block sticky top-0 h-screen overflow-y-auto"
+               style={{ borderRight: "1px solid var(--border)" }}>
+          <SidebarContent pathname={pathname} t={t} />
+        </aside>
+        <main className="min-w-0">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
+```
+
+**When to use**: Layout Mode C — 6+ docs pages or deep hierarchical content.
+
+**Customization notes**:
+- Adapt `NAV_GROUPS` to match the project's actual page set and groupings from Step 3.3.1.
+- If the project has ThemeToggle / LanguageSwitcher, add them to the sidebar bottom or mobile top bar.
+- For three-column layout (sidebar + content + right TOC), the individual page's `content.tsx` handles the content + TOC grid — the layout only provides the sidebar.
+
+**Search integration**: Include SearchButton + SearchDialog in both layout templates. Place SearchButton in the header (Mode B) or at the top of the sidebar (Mode C).
 
 ## Search Component (CMD+K)
 
@@ -276,8 +458,9 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
 
 ### When to Include Search
 
-- **Always include** when generating 2+ documentation pages
-- **Skip** when generating a single standalone docs page (no multi-page navigation)
+- **Layout Mode A (one-page)**: Skip — browser Ctrl+F and right-side TOC are sufficient
+- **Layout Mode B (header nav)**: Include — place SearchButton in the top header bar
+- **Layout Mode C (sidebar nav)**: Include — place SearchButton at the top of the sidebar
 - **Consider alternatives**: If the project already uses a search library (e.g., Algolia, Meilisearch), integrate with that instead of adding a new component
 
 ---

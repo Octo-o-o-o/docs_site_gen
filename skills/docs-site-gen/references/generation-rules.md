@@ -4,25 +4,97 @@ Generate pages following the resolved design conventions. Apply these rules:
 
 ## 4.1 File Structure
 
-For each page, create:
-- `app/docs/{page-name}/page.tsx` — Server component with metadata export
-- `app/docs/{page-name}/content.tsx` — Client component with actual page content (if page uses hooks)
-- i18n keys in all detected language files (see Phase 2A.3 i18n level)
-- If generating 2+ pages: `app/docs/layout.tsx` with shared navigation and CMD+K search (see `references/templates.md`)
+The file structure depends on the **navigation layout** chosen in Step 3.3.1. All layouts share the Server/Client split pattern from `references/conventions.md`: `page.tsx` exports `Metadata` (Server Component), `content.tsx` has `"use client"` with interactive content.
+
+### Layout Mode A: One-page + Floating TOC
+
+All content consolidates into a single docs page. No shared layout file.
+
+```
+app/docs/
+├── page.tsx          # Server component (metadata + JSON-LD)
+├── content.tsx       # Client component (all sections + right-side TOC)
+└── sections/         # Split when content.tsx exceeds ~400 lines
+    ├── hero.tsx
+    ├── features.tsx
+    ├── architecture.tsx
+    └── getting-started.tsx
+```
+
+- **Right-side TOC is mandatory** — one-page always has enough sections to warrant it. Use two-column grid: content (left) + TableOfContents (right). See `references/templates.md`.
+- **Smooth scroll**: Add `scroll-behavior: smooth` to the docs container or use `<html>` style.
+- **Section anchors**: Each major section acts as a "virtual page" with its own anchor (e.g., `/docs#features`, `/docs#architecture`). Use `SectionHeading` with descriptive IDs.
+- **No layout.tsx, no SearchDialog**: Browser's Ctrl+F is sufficient for single-page search.
+- **Navigation links from homepage** point to `/docs` (optionally with anchor: `/docs#getting-started`).
+
+### Layout Mode B: Header Navigation
+
+Multiple pages with a horizontal nav bar in a sticky top header.
+
+```
+app/docs/
+├── layout.tsx        # Header nav layout (see templates.md "Header Nav Layout")
+├── page.tsx          # Overview page (server component)
+├── content.tsx       # Overview content (client component)
+├── features/
+│   ├── page.tsx
+│   └── content.tsx
+├── architecture/
+│   ├── page.tsx
+│   └── content.tsx
+└── getting-started/
+    ├── page.tsx
+    └── content.tsx
+```
+
+- **`layout.tsx`**: Sticky top bar with horizontal nav links, search button, back-to-home link. See `references/templates.md` "Docs Layout Template (Header Nav)".
+- **Nav items**: Flat list of page links — no grouping needed (header space is limited).
+- **Mobile**: Hamburger menu → dropdown/sheet with all nav items.
+- **CMD+K search**: In the header bar, right side.
+- **Right-side TOC**: Optional per page (include when page has 5+ sections).
+- **Breadcrumbs**: On sub-pages, below the header bar.
+- **PrevNextNav**: At the bottom of each page.
+
+### Layout Mode C: Sidebar Navigation
+
+Multiple pages with a persistent left sidebar showing the full navigation tree.
+
+```
+app/docs/
+├── layout.tsx        # Sidebar layout (see templates.md "Sidebar Nav Layout")
+├── page.tsx          # Overview page
+├── content.tsx
+├── features/
+│   ├── page.tsx
+│   └── content.tsx
+├── architecture/
+│   ├── page.tsx
+│   └── content.tsx
+└── ...
+```
+
+- **`layout.tsx`**: Left sidebar (240-280px) + content area. See `references/templates.md` "Docs Layout Template (Sidebar Nav)".
+- **Sidebar content**: Grouped navigation items (from Step 3.3.1 page grouping). Group headings are non-clickable labels; page links are indented below.
+- **Active page highlight**: Current page link has accent color + accent-soft background.
+- **Mobile**: Hamburger button in a slim top bar → slide-out drawer overlay with the sidebar content.
+- **CMD+K search**: At the top of the sidebar.
+- **Three-column option**: When a page has 5+ sections, use three-column grid: sidebar (260px) | content | TOC (200px). TOC is hidden on screens < 1280px.
+- **Breadcrumbs**: Optional (sidebar already shows location, but include for SEO `BreadcrumbList` JSON-LD).
+- **PrevNextNav**: At the bottom of each page.
+- **Sticky sidebar**: `position: sticky; top: 0; height: 100vh; overflow-y: auto`.
+
+### Common rules (all layouts)
 
 **Large page split rule**: If a `content.tsx` will exceed ~400 lines, split into section components:
 ```
-app/docs/page-name/
-├── page.tsx          # Server component (metadata)
-├── content.tsx       # Client component (assembles sections)
-└── sections/
-    ├── hero.tsx      # Hero section
-    ├── features.tsx  # Feature cards grid
-    └── how-it-works.tsx  # Step cards
+sections/
+├── hero.tsx          # export function HeroSection()
+├── features.tsx      # export function FeaturesSection()
+└── how-it-works.tsx  # export function HowItWorksSection()
 ```
-Each section file exports a named component (e.g., `export function FeaturesSection()`), imported by `content.tsx`. Keep shared sub-components (CodeBlock, SectionHeading, icons) in `content.tsx` or a shared `components.tsx`.
+Each section file exports a named component, imported by `content.tsx`. Keep shared sub-components (CodeBlock, SectionHeading, icons) in `content.tsx` or a shared `components.tsx`.
 
-Use the **Server/Client split pattern** from `references/conventions.md`: `page.tsx` exports `Metadata` (Server Component), `content.tsx` has `"use client"` with interactive content.
+**i18n keys**: Generate in all detected language files (see Phase 2A.3 i18n level).
 
 ## 4.2 Design System Application
 

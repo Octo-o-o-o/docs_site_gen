@@ -246,14 +246,70 @@ This keyword map feeds into Step 3.4 (content outline includes keyword assignmen
 
 Based on Phase 2 findings and audience/depth selections:
 
-1. **Determine page set**: Overview, Getting Started, Features, Architecture, Self-Host, API Reference, FAQ, Configuration
+1. **Determine page set**: Which pages are applicable — Overview, Getting Started, Features, Architecture, Self-Host, API Reference, FAQ, Configuration
 2. **Scope**: First-time → start with Overview page. Incremental → identify updates needed.
 3. **Check for existing pages** — plan updates rather than overwrites
-4. **Docs layout**: If 2+ pages, plan a shared `app/docs/layout.tsx` with navigation
+4. **Route conflict check**: If the planned route already exists for a non-doc purpose, propose an alternative or ask the user.
+
+#### Step 3.3.1: Navigation Layout Strategy
+
+After determining the page set (Step 3.3), choose a navigation layout based on content volume. This decision shapes the entire docs architecture.
+
+**Estimate content volume** from the planned page count + content depth (Step 3.2):
+
+| Planned Pages | Content Depth | Recommendation |
+|---------------|---------------|----------------|
+| 1 page | Any | **One-page** (only option) |
+| 2-3 pages | Overview (~800w) | **One-page** — consolidate into single scrollable page with section anchors |
+| 2-3 pages | Technical (~1500w) | **One-page** (recommended) or **Header nav** |
+| 3-5 pages | Technical/Comprehensive | **Header nav** (recommended) — clean horizontal navigation |
+| 6+ pages | Any | **Sidebar nav** (recommended) — full navigation tree |
+
+**Three layout modes**:
+
+**A. One-page + Floating TOC** — All content in a single scrollable page.
+- Right-side TOC for quick section jumping (mandatory)
+- Anchor-based navigation via SectionHeading IDs
+- No `layout.tsx` needed, simplest URL structure (`/docs#features`, `/docs#architecture`)
+- Best for: compact docs where users benefit from seeing everything in context
+- Reference style: Linear product pages, simple project landing docs
+
+**B. Header Navigation** — Horizontal nav links in a sticky top bar.
+- Each page is a top-level link in the header
+- Clean and unobtrusive, pages are self-contained
+- Individual pages can have right-side TOC
+- CMD+K search in header bar
+- Mobile: hamburger menu → dropdown
+- Best for: 3-5 distinct topics, each page is a complete unit
+- Reference style: Notion help center, Linear developer docs
+
+**C. Sidebar Navigation** — Persistent left sidebar with full page tree.
+- Sidebar (240-280px) shows all pages grouped by category
+- Content area fills remaining width
+- Optional right-side TOC (three-column layout: sidebar | content | TOC)
+- CMD+K search at top of sidebar
+- Mobile: slide-out drawer (hamburger button)
+- Best for: deep documentation with many sections, frequent cross-referencing
+- Reference style: Stripe docs, Vercel docs, Next.js docs
+
+**When sidebar is chosen**, also plan **page grouping** for the sidebar:
+```
+Example groupings:
+- Getting Started: Overview, Quick Start
+- Guides: Features, Architecture, Self-Host
+- Reference: API, Configuration
+```
+
+Present the recommendation to the user with `AskUserQuestion`:
+- If ≤ 2 pages: inform user it will be one-page (no choice needed)
+- If 3+ pages: recommend a layout, let user choose between the applicable options
+- Include this choice in the CP2 checkpoint presentation
+
+See `references/generation-rules.md` section 4.1 for layout-specific file structures and `references/templates.md` for layout code templates.
 
 #### Step 3.4: Content Outline Draft
 
-**This is the most critical planning step.** For each page, produce a **detailed content outline** mapping each section to its source material from Phase 2B. See `references/page-templates.md` for section structures per page type.
+**This is the most critical planning step.** For each page (or for each section if one-page mode), produce a **detailed content outline** mapping each section to its source material from Phase 2B. See `references/page-templates.md` for section structures per page type.
 
 Each outline entry must include:
 - Section name and purpose
@@ -266,7 +322,7 @@ Each outline entry must include:
 - Every capability claim MUST have been verified in Phase 2B.4
 - Tier 1 features: 150-250 words; Tier 2: 50-100 words; Tier 3: 20-40 words
 
-**CHECKPOINT CP2**: Present the complete plan (style direction + audience + content outline with sources) to the user and wait for approval. The user reviews feature selection, depth, narrative accuracy, and content sources.
+**CHECKPOINT CP2**: Present the complete plan to the user and wait for approval: style direction + audience + **navigation layout** + content outline with sources. The user reviews feature selection, depth, layout choice, narrative accuracy, and content sources.
 
 ---
 
@@ -276,7 +332,7 @@ Each outline entry must include:
 
 Generate pages following the resolved design conventions. Key areas covered:
 
-1. **File Structure** — Server/Client split (`page.tsx` + `content.tsx`), large page splitting, docs layout for multi-page
+1. **File Structure** — Layout-specific: one-page with TOC (Mode A), header nav (Mode B), or sidebar nav (Mode C). Server/Client split, large page splitting
 2. **Design System Application** — Apply Level A/B/C design conventions from Phase 1
 3. **Code Conventions** — Match existing codebase style (imports, CSS approach, component patterns)
 4. **Reusable Components** — Reuse existing > import from existing docs > create new. Include TableOfContents, Breadcrumbs, PrevNextNav, Callout as needed

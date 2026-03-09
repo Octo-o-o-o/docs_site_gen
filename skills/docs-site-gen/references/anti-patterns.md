@@ -291,6 +291,23 @@ const agent = await client.agents.create({ name: "my-agent", url: "https://..." 
 
 **Why**: Synthesized examples may contain API errors (wrong method names, incorrect parameter shapes). Examples from test files or `examples/` directories are proven to compile and produce the expected output. Phase 2B.7 collects these specifically for documentation use.
 
+### 21. Wrong Navigation Layout for Content Volume
+
+**Wrong:** Using sidebar navigation for 2-3 pages (wastes screen space, makes sparse docs look empty), or forcing all content into one page when there are 6+ distinct topics (scroll fatigue, hard to find specific sections).
+
+**Correct:** Follow the recommendation matrix in Step 3.3.1:
+- ≤ 2 pages → one-page with TOC
+- 3-5 pages → header navigation
+- 6+ pages → sidebar navigation
+
+Always present the recommendation to the user and let them choose. If the user insists on a non-recommended layout, respect their choice.
+
+### 22. Mixing Navigation Patterns
+
+**Wrong:** Using a sidebar layout but also adding horizontal nav links in the header for the same pages, or adding a right-side TOC to every page in sidebar mode regardless of section count.
+
+**Correct:** Pick ONE navigation pattern and commit to it. The layout modes are mutually exclusive. Right-side TOC is only added to pages with 5+ sections (except in one-page mode where it's always present).
+
 ---
 
 ## Troubleshooting
@@ -314,6 +331,9 @@ const agent = await client.agents.create({ name: "my-agent", url: "https://..." 
 | Docs read like marketing copy | Used adjectives instead of mechanisms | Apply specificity check (Phase 5.3.2), replace every adjective with a concrete detail |
 | User rejected content outline | Outline didn't match project priorities | Re-discuss with user at CP2, ask which features matter most |
 | Missing sidebar/layout/nav | Layout file planned but never generated | Run Phase 5.0 Pass 1 file structure check, create missing layout.tsx |
+| Sidebar feels empty / too sparse | Too few pages for sidebar layout | Switch to header nav (Mode B) or one-page (Mode A) per Step 3.3.1 |
+| One-page too long to scroll | Too much content for single page | Switch to multi-page layout (Mode B or C) per Step 3.3.1 |
+| Mobile nav broken | Layout template not responsive | Verify hamburger menu (Mode B) or slide-out drawer (Mode C) exists |
 | Feature cards fewer than planned | Some features dropped during generation | Run Phase 5.0 Pass 2 feature count verification, add missing cards |
 | Config descriptions don't match behavior | Description derived from variable name, not usage | Re-read the source file where variable is consumed (Phase 2B.6) |
 | Quick Start code example has API errors | Example was synthesized, not extracted from tests | Check Phase 2B.7 for verified examples from test/example files |
