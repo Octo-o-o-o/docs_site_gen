@@ -135,10 +135,10 @@ You: "Generate a docs site for this project"
 
 AI:
   → Phase 1: Detects your design system (Tailwind + CSS variables, dark mode support)
+  → CP1: "I found these design conventions. Which style preset do you prefer?"
   → Phase 2: Reads 12 API routers, 8 models, 5 services — builds feature inventory
-  → CP1: "I found these design conventions and features. Which style preset do you prefer?"
   → Phase 3: Produces content outline with sources
-  → CP2: "Here's the planned content. Each feature maps to verified code. Approve?"
+  → CP2: "Here's the planned content with navigation layout. Each feature maps to verified code. Approve?"
   → Phase 4: Generates page.tsx + content.tsx + i18n keys + llms.txt
   → Phase 5: Runs tsc, lint, i18n check, completeness audit
   → CP3: "Done. Here's what was generated. Run `pnpm build` to verify."

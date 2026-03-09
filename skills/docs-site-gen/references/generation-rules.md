@@ -1,12 +1,14 @@
 # Phase 4: Page Generation Rules
 
+Detailed rules for Phase 4 page generation. Read this file before starting Phase 4. Covers file structure per layout mode, design system application, reusable components, AI-friendly/SEO requirements, evidence-based content writing, i18n key naming, and navigation updates.
+
 Generate pages following the resolved design conventions. Apply these rules:
 
 ## 4.1 File Structure
 
 The file structure depends on the **navigation layout** chosen in Step 3.3.1. All layouts share the Server/Client split pattern from `references/conventions.md`: `page.tsx` exports `Metadata` (Server Component), `content.tsx` has `"use client"` with interactive content.
 
-### Layout Mode A: One-page + Floating TOC
+### Layout Mode A: One-page + Sticky TOC
 
 All content consolidates into a single docs page. No shared layout file.
 
@@ -33,7 +35,7 @@ Multiple pages with a horizontal nav bar in a sticky top header.
 
 ```
 app/docs/
-├── layout.tsx        # Header nav layout (see templates.md "Header Nav Layout")
+├── layout.tsx        # Header nav layout (see templates.md "Docs Layout Template (Header Nav)")
 ├── page.tsx          # Overview page (server component)
 ├── content.tsx       # Overview content (client component)
 ├── features/
@@ -219,7 +221,7 @@ These rules apply the keyword map to actual page content. All placement must fee
 - If missing → note in CP3 output as a recommendation (do not auto-generate favicons, as they require design assets)
 - Verify `<link rel="llms-txt">` tag exists (from step C above)
 
-**F. Search Engine Discoverability (conditional on SEO toggle from Step 3.2)**
+**E. Search Engine Discoverability (conditional on SEO toggle from Step 3.2)**
 
 The SEO toggle controls whether docs pages are actively made discoverable by Google and other search engines. This affects sitemap, robots, and metadata behavior.
 
@@ -228,7 +230,7 @@ The SEO toggle controls whether docs pages are actively made discoverable by Goo
 1. **`app/sitemap.ts`** — Generate or update the dynamic sitemap to include all docs pages:
    ```typescript
    // app/sitemap.ts
-   import type { MetadatRoute } from "next";
+   import type { MetadataRoute } from "next";
 
    export default function sitemap(): MetadataRoute.Sitemap {
      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://your-domain.com";
@@ -292,9 +294,13 @@ The SEO toggle controls whether docs pages are actively made discoverable by Goo
    ```
    This tells Google not to index these pages while still allowing rich link previews when shared directly.
 
-**E. JSON-LD Structured Data (per page)**
+**F. JSON-LD Structured Data (per page)**
 
-Add Schema.org structured data to each `page.tsx` for search engine rich results. This completes the discoverability stack (llms.txt for AI tools, JSON-LD for search engines). See `references/conventions.md` for the code template.
+Add Schema.org structured data to each `page.tsx` for search engine rich results. This completes the discoverability stack (llms.txt for AI tools, JSON-LD for search engines).
+
+**SEO conditionality**:
+- **Basic JSON-LD** (`TechArticle` or `HowTo` as primary schema) — always generate, regardless of SEO toggle. Supports AI readability and basic search presence.
+- **Rich additional schemas** (`BreadcrumbList`, `FAQPage`, `SoftwareApplication`) — only generate when **SEO = Yes**. These enable search engine rich snippets that have no value when pages are noindexed.
 
 **Base rules**:
 1. Render `<script type="application/ld+json">` tag(s) in each `page.tsx` (Server Component) alongside `<PageContent />`

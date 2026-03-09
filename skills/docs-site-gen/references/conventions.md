@@ -444,17 +444,11 @@ The project uses **separate files** for each language. Generate keys in BOTH fil
 - **Spacing**: `mb-12` between sections, `mb-4` between heading and content, `space-y-2` for lists
 - **Breakpoints**: `sm:` = 640px, `md:` = 768px, `lg:` = 1024px (verify in Tailwind config)
 
-## Docs Layout Template (Multi-Page)
+## Docs Layout & Search Templates
 
-When generating 2+ docs pages, create a shared `app/docs/layout.tsx` with sidebar navigation. See `references/templates.md` for the full layout template code.
+For multi-page docs (Layout Mode B or C from Step 3.3.1), a shared `layout.tsx` is required. For CMD+K search (also Mode B/C only), include SearchDialog + SearchButton.
 
-**Key points**: Sticky top nav with blur backdrop, active route highlighting via `usePathname()`, responsive (mobile hides nav links). Individual pages omit their own nav and use `<main>` directly.
-
-## Search Component (CMD+K)
-
-When generating 2+ docs pages, include a CMD+K search component. See `references/templates.md` for complete SearchDialog, SearchButton, search index, and integration code.
-
-**Key points**: Zero-dependency client-side search, indexes from i18n keys, ESC to close, max 8 results. Skip if only generating 1 page. Use project's existing search library (Algolia, etc.) if present.
+**All layout and search code templates are in `references/templates.md`** — Header Nav layout, Sidebar Nav layout, SearchDialog, SearchButton, search index construction, and integration instructions.
 
 ---
 
@@ -496,19 +490,9 @@ Usage:
 - `scroll-mt-20` accounts for sticky nav height when clicking anchor links
 - Every page should use `SectionHeading` for ALL section headings (not bare `<h2>` tags)
 
-### SSR Compatibility Rules
-
-Next.js renders both Server Components and Client Components ("use client") on the server. This means `curl` gets full HTML. But follow these rules to ensure AI tools can read the content:
-
-1. **DO**: Put metadata in `page.tsx` (Server Component), interactive content in `content.tsx` (Client Component)
-2. **DO**: Use `useTranslation()` normally — SSR renders with the default locale
-3. **DO NOT**: Fetch documentation text in `useEffect` — it won't be in the initial HTML
-4. **DO NOT**: Conditionally render sections based on client-only state (e.g., `window.innerWidth`)
-5. **DO NOT**: Use `dynamic(() => import(...), { ssr: false })` for documentation content
-
-The content.tsx client component is fine because Next.js SSR renders it. The key rule: **all documentation text must be present in the initial render, not loaded asynchronously.**
-
 ### Server/Client Split Template
+
+The Server/Client split ensures metadata works (Server Component) while enabling interactivity (Client Component). SSR renders both, so `curl` gets full HTML. See `references/generation-rules.md` section 4.5A for detailed SSR compatibility rules.
 
 ```tsx
 // app/docs/page-name/page.tsx — Server Component (SEO + metadata)
@@ -550,43 +534,9 @@ import { useTranslation } from "@/i18n";
 
 ### JSON-LD Structured Data
 
-Add Schema.org structured data to each `page.tsx` for search engine rich results. This completes the discoverability stack: llms.txt for AI tools, JSON-LD for search engines.
+See `references/generation-rules.md` section 4.5F for complete JSON-LD rules, including schema type selection per page type, SEO conditionality, and templates for `BreadcrumbList`, `FAQPage`, `SoftwareApplication`, and `HowTo` schemas.
 
-```tsx
-// In page.tsx (Server Component) — render alongside <PageContent />
-export default function Page() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "TechArticle",       // or "HowTo" for getting-started pages
-    headline: "Page Title — Project Name",
-    description: "Concise page description matching metadata.description.",
-    author: {
-      "@type": "Organization",
-      name: "Project Name",       // from Phase 2B.5
-    },
-    isPartOf: {
-      "@type": "WebSite",
-      name: "Project Name",
-    },
-  };
-
-  return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <PageContent />
-    </>
-  );
-}
-```
-
-**Rules:**
-- `headline` and `description` must match the page's `Metadata` export values
-- Use `TechArticle` for reference/architecture docs, `HowTo` for tutorials/getting-started
-- Only include fields with known, factual values — do not fabricate URLs or dates
-- This goes in `page.tsx` (Server Component) so it renders in the initial HTML for search crawlers
+**Quick reference**: Render `<script type="application/ld+json">` in each `page.tsx` (Server Component) alongside `<PageContent />`. Use `TechArticle` for reference docs, `HowTo` for tutorials. `headline` and `description` must match the page's `Metadata` values.
 
 ### llms.txt Files
 

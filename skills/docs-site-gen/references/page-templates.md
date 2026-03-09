@@ -270,7 +270,7 @@ Each style preset (from `references/style-presets.md`) modifies templates differ
 
 ## Content Generation Guidelines
 
-Content quality rules (evidence-based writing, specificity, tier-based depth) are defined in SKILL.md Phase 4.6. This section provides **page-type-specific** generation guidance.
+Content quality rules (evidence-based writing, specificity, tier-based depth) are defined in `references/generation-rules.md` sections 4.6.1 (Content Writing Rules) and 4.6.2 (Content Quality Checklist). This section provides **page-type-specific** generation guidance.
 
 ### Page-Specific Notes
 
@@ -289,4 +289,4 @@ Content quality rules (evidence-based writing, specificity, tier-based depth) ar
 1. **Every section needs an i18n key**: Even "small" text like badges and notes.
 2. **Consistency across pages**: If one page uses `mb-12` between sections, all pages should.
 3. **Link between pages**: Use `Link` from `next/link` for internal links.
-4. **Structural components**: For multi-page docs, include Breadcrumbs (top of sub-pages), PrevNextNav (bottom of each page), and TableOfContents (right-side, for pages with 5+ sections). Use Callout for important notes/warnings. See SKILL.md Phase 4.4 for conditions and `references/conventions.md` / `references/templates.md` for component code.
+4. **Structural components**: For multi-page docs, include Breadcrumbs (top of sub-pages), PrevNextNav (bottom of each page), and TableOfContents (right-side, for pages with 5+ sections). Use Callout for important notes/warnings. See `references/generation-rules.md` section 4.4 for conditions and `references/conventions.md` / `references/templates.md` for component code.

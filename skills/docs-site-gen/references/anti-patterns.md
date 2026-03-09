@@ -291,16 +291,21 @@ const agent = await client.agents.create({ name: "my-agent", url: "https://..." 
 
 **Why**: Synthesized examples may contain API errors (wrong method names, incorrect parameter shapes). Examples from test files or `examples/` directories are proven to compile and produce the expected output. Phase 2B.7 collects these specifically for documentation use.
 
+---
+
 ### 21. Wrong Navigation Layout for Content Volume
 
 **Wrong:** Using sidebar navigation for 2-3 pages (wastes screen space, makes sparse docs look empty), or forcing all content into one page when there are 6+ distinct topics (scroll fatigue, hard to find specific sections).
 
 **Correct:** Follow the recommendation matrix in Step 3.3.1:
-- ≤ 2 pages → one-page with TOC
+- 1 page → one-page with TOC (only option)
+- 2-3 pages → one-page recommended, header nav available for Technical/Comprehensive depth
 - 3-5 pages → header navigation
 - 6+ pages → sidebar navigation
 
 Always present the recommendation to the user and let them choose. If the user insists on a non-recommended layout, respect their choice.
+
+---
 
 ### 22. Mixing Navigation Patterns
 
@@ -321,10 +326,10 @@ Always present the recommendation to the user and let them choose. If the user i
 | Anchor links don't work | Missing `id` on heading elements | Use `SectionHeading` component |
 | Page flickers on load | Large client-side state initialization | Minimize client-only state; use CSS for initial layout |
 | Styling inconsistent with rest of app | Didn't run Phase 1 design detection | Re-run Phase 1 and apply detected conventions |
-| llms.txt stale | Generated docs but forgot to update llms.txt | Re-run Phase 4.5C after any docs changes |
+| llms.txt stale | Generated docs but forgot to update llms.txt | Update `public/llms.txt` and `public/llms-full.txt` to reflect current docs (see `generation-rules.md` section 4.5C for formats) |
 | Navigation links 404 | Generated page but didn't update route | Check `app/docs/` directory structure and layout nav |
 | Fonts don't match | Applied style preset fonts over project fonts | Project fonts take priority (design system Level A/B) |
-| Search component not working | Missing search index or wrong import | Verify search component setup per conventions.md |
+| Search component not working | Missing search index or wrong import | Verify search component setup per templates.md |
 | Feature descriptions feel generic | Content derived from CLAUDE.md only, not source code | Re-run Phase 2B deep content mining, read actual router/service files |
 | User says "this isn't what we do" | Documented features that don't exist or are mischaracterized | Run Phase 2B.4 claim verification, remove unverified claims |
 | Content too thin / surface-level | Skipped Phase 2B or used Tier 3 depth for all features | Re-classify feature tiers, expand Tier 1 features to 150-250 words |
@@ -337,7 +342,7 @@ Always present the recommendation to the user and let them choose. If the user i
 | Feature cards fewer than planned | Some features dropped during generation | Run Phase 5.0 Pass 2 feature count verification, add missing cards |
 | Config descriptions don't match behavior | Description derived from variable name, not usage | Re-read the source file where variable is consumed (Phase 2B.6) |
 | Quick Start code example has API errors | Example was synthesized, not extracted from tests | Check Phase 2B.7 for verified examples from test/example files |
-| JSON-LD missing from page | Forgot to add script tag in page.tsx | Add `<script type="application/ld+json">` in Server Component (Phase 4.5E) |
+| JSON-LD missing from page | Forgot to add script tag in page.tsx | Add `<script type="application/ld+json">` in Server Component (Phase 4.5F) |
 
 ## Recovery Steps
 

@@ -267,7 +267,7 @@ After determining the page set (Step 3.3), choose a navigation layout based on c
 
 **Three layout modes**:
 
-**A. One-page + Floating TOC** — All content in a single scrollable page.
+**A. One-page + Sticky TOC** — All content in a single scrollable page.
 - Right-side TOC for quick section jumping (mandatory)
 - Anchor-based navigation via SectionHeading IDs
 - No `layout.tsx` needed, simplest URL structure (`/docs#features`, `/docs#architecture`)
@@ -301,7 +301,8 @@ Example groupings:
 ```
 
 Present the recommendation to the user with `AskUserQuestion`:
-- If ≤ 2 pages: inform user it will be one-page (no choice needed)
+- If 1 page: inform user it will be one-page (no choice needed)
+- If 2-3 pages: recommend one-page, but offer header nav for Technical/Comprehensive depth
 - If 3+ pages: recommend a layout, let user choose between the applicable options
 - Include this choice in the CP2 checkpoint presentation
 

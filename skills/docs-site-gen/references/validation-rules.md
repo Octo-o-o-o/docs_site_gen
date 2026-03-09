@@ -1,5 +1,7 @@
 # Phase 5: Validation Rules
 
+Detailed checklist for Phase 5 validation. Read this file before starting Phase 5. Covers the two-pass completeness audit (5.0), TypeScript/lint checks (5.1), AI-friendly/SEO validation (5.2), content quality audit (5.3), and the visual review prompt (5.4).
+
 After generation, run ALL checks in order. Do not skip any.
 
 ## 5.0 Implementation Completeness Verification
@@ -176,6 +178,7 @@ After Pass 1 gaps are fixed, verify the generated output works as a coherent who
 6. Verify every docs `page.tsx` has `robots: { index: false, follow: false }` in its Metadata export.
 7. Verify docs pages are NOT listed in `app/sitemap.ts`.
 8. Verify no BreadcrumbList/FAQPage/SoftwareApplication JSON-LD was generated (skip rich structured data when noindex).
+9. Verify each docs `page.tsx` still has basic JSON-LD (`TechArticle` or `HowTo` primary schema) — required regardless of SEO toggle for AI readability (see `generation-rules.md` section 4.5F).
 
 ## 5.3 Content Quality Audit
 
