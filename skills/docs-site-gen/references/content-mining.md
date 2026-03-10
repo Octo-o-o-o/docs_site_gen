@@ -87,9 +87,35 @@ Scan this CLI project and build a Feature Inventory Table. For each command/subc
    - Config file search paths
    - Relationship between config options and CLI flags
 
+5. For each command, construct a representative usage example showing the command
+   as an end user would type it in a terminal. Include realistic argument values.
+
 Return results as a markdown table with columns:
 | # | Command | Subcommands | Flags/Options | Description | Source File |
+
+Also return a "Usage Examples" section with one code block per major command.
 ```
+
+**CLI usage examples**: For each Tier 1/Tier 2 command, extract or construct a usage example that shows how an end user invokes the command. These examples feed directly into the docs Quick Start and Command Reference sections. Format each as a fenced code block with the appropriate shell language tag:
+
+```bash
+# Initialize a new project from a template
+mycli init --template react-ts my-app
+
+# Deploy to production with environment selection
+mycli deploy production --env staging --region us-east-1
+
+# Preview deployment (dry run, no actual changes)
+mycli deploy preview --dry-run
+
+# View current configuration
+mycli config list
+
+# Set a configuration value globally
+mycli config set --global api_key sk-xxxx
+```
+
+If the project's test files or README contain real invocation examples, prefer those over constructed ones (same principle as Step 2B.7 — real examples are proven to work).
 
 **Profile selection**: Choose the profile based on Phase 1 Step 1.0 frontend detection + project structure:
 - Has API routers/controllers → **Profile A**
@@ -114,6 +140,21 @@ Profile C example:
 | 1 | init | — | --template, --force | Initialize a new project | src/commands/init.ts |
 | 2 | deploy | preview, production | --env, --region, --dry-run | Deploy to cloud | src/commands/deploy.ts |
 | 3 | config | get, set, list | --global | Manage configuration | src/commands/config.ts |
+```
+
+Profile C usage examples (extracted alongside the inventory table):
+```bash
+# Quick start — initialize and deploy
+mycli init --template default my-project
+cd my-project
+mycli deploy preview
+
+# Production deployment with options
+mycli deploy production --env prod --region us-east-1 --verbose
+
+# Configuration management
+mycli config set api_key "sk-live-xxxx"
+mycli config list
 ```
 
 ## Step 2B.2: Feature Depth Classification
