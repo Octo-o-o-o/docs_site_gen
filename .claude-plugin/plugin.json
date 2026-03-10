@@ -1,7 +1,7 @@
 {
   "name": "docs-site-gen",
-  "version": "2.2.0",
-  "description": "Generates and maintains documentation website pages by reading actual source code. Supports 8 style presets, bilingual i18n, and AI-friendly output.",
+  "version": "2.3.0",
+  "description": "Generates documentation websites for any project type (web apps, APIs, CLI tools, libraries). Reads actual source code, supports 8 style presets, bilingual i18n, standalone docs for projects without frontend, and AI-friendly output.",
   "author": {
     "name": "Octo-o-o-o",
     "url": "https://github.com/Octo-o-o-o"
@@ -17,6 +17,8 @@
     "ai-friendly",
     "llms-txt",
     "seo",
+    "cli-tools",
+    "standalone-docs",
     "multi-ide",
     "agent-skills"
   ]

@@ -12,9 +12,9 @@
 
 ## 这个技能做什么
 
-`docs-site-gen` 是一个 [AI 编程技能](https://docs.anthropic.com/en/docs/claude-code/skills)，用于生成和维护集成到你现有 Web 应用中的完整文档网站。它分 5 个阶段工作：
+`docs-site-gen` 是一个 [AI 编程技能](https://docs.anthropic.com/en/docs/claude-code/skills)，用于为任意项目生成和维护完整文档网站 —— Web 应用、后端 API、CLI 工具、库/SDK、MCP Server 等。它分 5 个阶段工作：
 
-1. **设计系统检测** —— 读取你的 `globals.css`、Tailwind 配置和现有页面，匹配你项目的视觉风格。不会生成格格不入的通用模板。
+1. **设计系统检测** —— 读取你的 `globals.css`、Tailwind 配置和现有页面，匹配你项目的视觉风格。没有前端？从 4 套精选模板和自定义配色中选择，还可以预览 HTML Demo。
 2. **深度内容挖掘** —— 读取你的路由、模型和服务，构建经过验证的功能清单。文档中的每一项声明都可以追溯到真实代码。
 3. **内容规划（需你审批）** —— 生成详细的内容大纲，将每个章节映射到其源文件。你审核通过后才会生成代码。
 4. **页面生成** —— 输出 Next.js 页面组件，包含完整的 i18n、SEO 元数据、章节锚点和 `llms.txt`（AI 可读性）。
@@ -22,7 +22,8 @@
 
 ### 核心特性
 
-- **基于证据的内容**：读取实际源代码（路由、模型、服务）—— 而非 CLAUDE.md/README 摘要。功能描述包含真实机制（协议、数据流、API 端点），不是营销形容词。
+- **基于证据的内容**：读取实际源代码（路由、模型、服务、CLI 命令）—— 而非 CLAUDE.md/README 摘要。功能描述包含真实机制（协议、数据流、API 端点），不是营销形容词。
+- **支持任意项目类型**：有前端的 Web 应用、后端 API、CLI 工具、库/SDK、MCP Server —— 自动检测项目类型并调整工作流。为无前端项目搭建独立文档站。
 - **8 种精选风格预设**：灵感来自 Stripe、Vercel、Tailwind、GitHub、Supabase、Linear、Anthropic 和 Notion 的文档站。或者自动检测你项目现有的设计系统。
 - **默认 AI 友好**：通过 SSR 渲染的内容可用 `curl` 访问。所有标题都有章节锚点。自动生成 `llms.txt` 和 `llms-full.txt`，让其他 AI 工具可以阅读你的文档。
 - **双语 i18n**：同时生成 `en-US` 和 `zh-CN`（或适配你项目的语言设置）。所有文本都通过 i18n —— 无硬编码文字。
@@ -34,8 +35,10 @@
 ## 环境要求
 
 - 支持 [SKILL.md 格式](#支持的客户端)的 AI 编程客户端
-- Web 前端项目（推荐 Next.js App Router）
-- Node.js + pnpm/npm（用于验证命令）
+- 任意项目类型：Web 应用（推荐 Next.js）、后端 API、CLI 工具、库/SDK、MCP Server 等
+- 有前端项目：文档集成到现有应用中
+- 无前端项目：搭建独立文档站或生成静态 HTML
+- Node.js + pnpm/npm（使用 Next.js 输出时需要，用于验证命令）
 
 ## 安装
 
@@ -182,6 +185,7 @@ docs-site-gen/
 │           ├── templates.md              # 大型代码模板（布局、搜索、目录）
 │           ├── page-templates.md         # 各页面类型的章节骨架
 │           ├── style-presets.md          # 8 种精选风格预设
+│           ├── standalone-mode.md       # 无前端工作流（模板、配色、Demo HTML）
 │           └── anti-patterns.md          # 常见错误和故障排除
 ├── .claude-plugin/
 │   └── plugin.json                       # Claude Code marketplace 元数据

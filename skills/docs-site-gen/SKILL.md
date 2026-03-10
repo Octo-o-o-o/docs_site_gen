@@ -1,22 +1,23 @@
 ---
 name: docs-site-gen
-description: Generates and maintains documentation website pages for any project. Analyzes project structure, architecture, and features to produce high-quality, bilingual documentation pages integrated into the existing web app. Use when creating, updating, or expanding project documentation sites, or when the user mentions "docs page", "docs site", "/docs route", or "project introduction page". Supports Next.js App Router with i18n. Offers 8 curated doc styles and auto-detects project design systems.
+description: Generates and maintains documentation website pages for any project — with or without an existing frontend. Analyzes project structure, architecture, and features to produce high-quality, bilingual documentation pages. Supports Next.js App Router with i18n, standalone docs sites for backend/CLI/library projects, and auto-detects project design systems with 8 curated style presets. Use when creating, updating, or expanding project documentation sites, or when the user mentions "docs page", "docs site", "/docs route", or "project introduction page".
 license: Apache-2.0
-compatibility: Requires a web frontend project (Next.js recommended). Node.js and pnpm/npm for validation.
+compatibility: Works with any project type. Next.js recommended for projects with existing frontend. For projects without frontend, scaffolds a standalone docs site or generates static HTML. Node.js and pnpm/npm for validation.
 metadata:
   author: Octo-o-o-o
-  version: "2.2.0"
+  version: "2.3.0"
 ---
 
 # docs-site-gen — Documentation Site Generator
 
 ## Overview
 
-This skill generates production-quality documentation website pages by deeply analyzing a project's codebase, architecture, and features. It produces Next.js page components (or adapts to the project's framework) with full bilingual i18n support, following the project's existing design system and code conventions.
+This skill generates production-quality documentation website pages by deeply analyzing a project's codebase, architecture, and features. It produces Next.js page components (or adapts to the project's framework) with full bilingual i18n support, following the project's existing design system and code conventions. For projects without a web frontend (backend APIs, CLI tools, libraries), it scaffolds a standalone docs site or generates static HTML.
 
 **Key capabilities**:
-- Auto-detects the project's UI and design specifications
-- Deep content mining: reads actual source code (routers, models, services) to build verified feature inventories — not just paraphrasing README
+- Works with any project type: full-stack web apps, backend APIs, CLI tools, libraries/SDKs, MCP servers
+- Auto-detects the project's UI and design specifications (or provides template + color scheme selection for projects without frontend)
+- Deep content mining: reads actual source code (routers, models, services, CLI commands) to build verified feature inventories — not just paraphrasing README
 - Configuration reference: auto-scans environment variables and config schemas to generate structured reference pages
 - Verified code examples: extracts real, working code snippets from test files and examples/ directories
 - Content outline with user review: the user approves the exact feature selection, depth, and narrative before any code is generated
@@ -27,7 +28,7 @@ This skill generates production-quality documentation website pages by deeply an
 
 Trigger this skill when:
 - User asks to "generate docs", "create documentation site/pages", "build a docs page"
-- User wants to add/expand/update documentation pages in their web app
+- User wants to add/expand/update documentation pages for their project (web app, API, CLI tool, library, etc.)
 - User mentions "/docs" route, "docs site", or "project introduction page"
 - User says "update docs to reflect recent changes"
 
@@ -50,6 +51,27 @@ Phase 1: Design System Detection → Phase 2: Project & Content Discovery → Ph
 ### Phase 1: Design System Detection
 
 **This phase runs FIRST — before any content analysis.** Its output determines how all subsequent phases handle visual design.
+
+#### Step 1.0: Frontend Presence Detection
+
+Before analyzing the design system, determine whether the project has a web frontend:
+
+**Search for frontend indicators**:
+```
+Glob patterns:
+- next.config.*, nuxt.config.*, vite.config.*, astro.config.*
+- app/layout.tsx, app/page.tsx, pages/_app.tsx, src/App.tsx, src/main.tsx
+- package.json → check for react, vue, svelte, angular in dependencies
+- index.html, public/index.html
+```
+
+**Classify frontend presence**:
+
+| Level | Criteria | Action |
+|-------|----------|--------|
+| **F1: Full Frontend** | Has framework config + multiple pages/routes | Proceed to Step 1.1 (normal design system detection) |
+| **F2: Minimal Frontend** | Single page or basic HTML without framework | Proceed to Step 1.1, expect Level C design system |
+| **F3: No Frontend** | No web framework, no HTML — backend/CLI/library only | Skip Steps 1.1-1.4. See `references/standalone-mode.md`. At CP1 inform user and present output strategy options. |
 
 #### Step 1.1: Search for Explicit UI/Design Specifications
 
@@ -142,12 +164,12 @@ Gather structural information about the project:
    - `package.json` / `pyproject.toml` for tech stack signals
    - Existing documentation in `docs/` directory
 
-2. **Identify web framework and conventions**:
+2. **Identify web framework and conventions** (skip for F3 — no frontend):
    - Locate the web app entry point (e.g., `apps/web/`, `src/`, `frontend/`)
    - Determine routing system (Next.js App Router, Pages Router, Vite, etc.)
    - Find existing docs pages (e.g., `app/docs/*/page.tsx`)
 
-3. **Analyze i18n setup**:
+3. **Analyze i18n setup** (for F3: classify as i18n-None unless project has i18n files for other purposes):
    - Locate i18n files (e.g., `src/i18n/en-US.json`, `zh-CN.json`)
    - Detect translation function import path (e.g., `from "@/i18n"` vs `from "react-i18next"`)
    - Note existing key structure and naming conventions
@@ -160,7 +182,7 @@ Gather structural information about the project:
    | **i18n-Single** | 1 language file or single-locale setup | Generate keys in that file only; skip bilingual checks |
    | **i18n-None** | No i18n files, no translation function, inline text throughout | Use inline text directly in components; skip all i18n key generation. Offer to set up i18n as a separate step (ask user, don't force). |
 
-4. **Check homepage navigation**:
+4. **Check homepage navigation** (skip for F3 — no existing site to link from):
    - Find docs links in navigation (file path, line number, current URL)
    - Note footer docs links
    - Identify where to add/update navigation entries
@@ -169,6 +191,47 @@ Gather structural information about the project:
    - Does the project already have docs pages? Which ones?
    - First-time docs generation or incremental update?
    - **Route conflict check**: If the planned docs route (e.g., `/docs`) already exists, read the existing page. If it serves a non-documentation purpose, propose an alternative route or ask the user.
+
+6. **Discover local documentation files** (Local MD Discovery):
+
+   Scan the project for existing markdown documentation that may contain content worth inlining into the docs site. This content should be **embedded directly** into generated pages — NOT referenced via links.
+
+   **Scan patterns**:
+   ```
+   docs/*.md, doc/*.md, documentation/*.md, wiki/*.md, guides/*.md
+   GUIDE.md, TUTORIAL.md, ARCHITECTURE.md, DESIGN.md, CONTRIBUTING.md
+   *.md in project root (excluding README.md, CLAUDE.md, CHANGELOG.md, LICENSE.md)
+   ```
+
+   **For each discovered MD file, evaluate**:
+
+   a. **Relevance**: Does the content describe THIS project? Check for project name mentions, matching file paths, matching technology references. If the file describes a different project → skip.
+
+   b. **Freshness**: Spot-check 2-3 specific references per file (file paths, API endpoints, commands, config keys) by grepping/globbing the codebase. If >50% of references are stale → mark as outdated.
+
+   c. **Classification**:
+
+   | Status | Criteria | Action |
+   |--------|----------|--------|
+   | **Current** | References match codebase, describes existing features | **Inline into docs**: preserve original text, map to page sections in Phase 3.4 |
+   | **Partially Outdated** | Some sections current, others stale | Extract current sections only. Note outdated parts in report. |
+   | **Outdated / Wrong** | Most references stale, or describes a different project | **Do NOT use**. Note as skipped in report. |
+
+   **Inline rules** (applied in Phase 4 when generating pages):
+   - Preserve the original author's text as much as possible — do not rewrite unless required for web formatting
+   - Convert MD headings → SectionHeading components; MD code blocks → CodeBlock components; MD tables → styled tables
+   - Do NOT create "see docs/xyz.md" links — the content must BE in the docs page directly
+   - Attribute source in an HTML comment: `<!-- Content sourced from docs/architecture.md -->`
+
+   **Output**: Add a "Local Documentation" section to the Phase 2 Content Discovery Report:
+   ```
+   ### Local Documentation ([N] files discovered, [M] current)
+   | File | Status | Usable Sections | Target Page |
+   |------|--------|----------------|-------------|
+   | docs/architecture.md | Current | All (4 sections) | /docs/architecture |
+   | docs/api-guide.md | Partial | Sections 1-3 | /docs/api |
+   | docs/old-setup.md | Outdated | — (skipped) | — |
+   ```
 
 #### Phase 2B: Deep Content Mining
 
@@ -186,6 +249,23 @@ Phase 2B builds a **verified feature inventory** by scanning actual source code 
 
 The output is a **Content Discovery Report** covering project identity, feature inventory, claim verification, configuration inventory, code examples, and content gaps. Present this report to the user (no checkpoint — it's informational).
 
+#### Lite Mode (Auto-Detection)
+
+After completing Phase 2B, check the Feature Inventory size. If the project has **fewer than 3 feature areas** in the inventory (common for micro projects: single-purpose tools, MCP servers, small utilities, scripts):
+
+- **Auto-activate Lite Mode** — inform the user in the Content Discovery Report: _"Small project detected ([N] features). Using streamlined single-page mode."_
+- **Phase 3 simplifications**:
+  - Skip Step 3.3.1 layout selection — force **One-page + Sticky TOC** (Mode A)
+  - Skip tier classification — treat all features as Tier 1 (full detail)
+  - Default content depth to "Technical introduction" (~1500 words) unless user overrides
+- **Phase 4 simplifications**:
+  - Generate a single `app/docs/page.tsx` + `content.tsx` (no sub-pages, no shared layout)
+  - Skip SearchDialog, PrevNextNav, Breadcrumbs (unnecessary for single page)
+  - Still include: TableOfContents (right-side), SectionHeading anchors, llms.txt, JSON-LD
+- **Phase 5**: Same validation, but skip multi-page coherence checks
+
+Lite Mode is a **simplification**, not a separate workflow. All other rules (design system, i18n, SEO, evidence-based content) still apply.
+
 ---
 
 ### Phase 3: Style, Audience & Documentation Planning
@@ -201,6 +281,18 @@ This phase combines style selection, audience confirmation, and detailed content
 **If Design System Level B (Implicit) or C (None)**:
 - Present style presets to user for selection. See `references/style-presets.md` for full details.
 - Options: Stripe Premium, Vercel Monochrome, Tailwind Utility, GitHub System, Supabase Bold, Linear Minimal, Anthropic Warm, Notion Friendly
+
+**If Frontend Level F3 (No Frontend)** — see `references/standalone-mode.md` for full details:
+
+The project has no web frontend. No design conventions exist to detect. Present template and color scheme options:
+
+1. **Template selection**: Present 4 layout templates (Developer Minimal, Enterprise Structured, Bold Modern, Friendly Guide) with descriptions. See `references/standalone-mode.md` for template details.
+
+2. **Color scheme selection**: Generate 3-4 color schemes tailored to the project's target audience and domain (from Phase 2B.5 project identity). Schemes should differ significantly (warm vs cool, light-first vs dark-first, vibrant vs muted). All must pass WCAG AA contrast ratios. See `references/standalone-mode.md` for generation guidelines.
+
+3. **Optional Demo HTML preview**: Ask the user: _"Would you like me to generate demo HTML files so you can visually compare the options?"_
+   - **If yes**: Generate lightweight self-contained HTML files (one per template×color combo, or a user-selected subset). Each shows a mock docs page with header, sections, code block, and feature cards using the project's actual name and pitch. **PAUSE here** — wait for the user to review and confirm their selection before continuing to Step 3.2.
+   - **If no**: User selects from text descriptions, then continue to Step 3.2 immediately.
 
 **Style Application Priority**:
 1. Project's explicit design tokens/spec (highest)
@@ -380,7 +472,7 @@ When invoked on a project that **already has docs pages**, the skill uses a spec
 
 ## Portability
 
-Optimized for **Next.js App Router** (auto-detected via `next.config.*` and `app/` directory). Adapts to Pages Router, Vite+React, or other setups — ask the user to confirm conventions when working with non-Next.js projects.
+Optimized for **Next.js App Router** (auto-detected via `next.config.*` and `app/` directory). Adapts to Pages Router, Vite+React, or other setups — ask the user to confirm conventions when working with non-Next.js projects. For projects without any frontend (F3), scaffolds a standalone Next.js docs app, generates static HTML, or adapts to the user's preferred framework — see `references/standalone-mode.md`.
 
 ## User Interaction Checkpoints
 
@@ -419,4 +511,5 @@ See `references/anti-patterns.md` for the full list of common mistakes with exam
 - [templates.md](references/templates.md) — Large code templates: DocsLayout, SearchDialog, SearchButton, TableOfContents, PrevNextNav
 - [page-templates.md](references/page-templates.md) — Section skeletons for 6 page types, content source mapping, style influence matrix
 - [style-presets.md](references/style-presets.md) — 8 curated style presets with colors, typography, layout patterns
+- [standalone-mode.md](references/standalone-mode.md) — No-frontend workflow: output strategy, template selection, color scheme generation, demo HTML preview
 - [anti-patterns.md](references/anti-patterns.md) — Common mistakes and troubleshooting guide

@@ -59,32 +59,78 @@ Return results as a markdown table with columns:
 | # | Feature Area | Source Files | Components | Key Functionality | Complexity | Pages Using It |
 ```
 
-Compile results into a **Feature Inventory Table**:
+**Profile C: CLI Tools** (command-line applications with subcommands, flags, and arguments):
 
+Give the agent this prompt template:
+
+```
+Scan this CLI project and build a Feature Inventory Table. For each command/subcommand, extract:
+
+1. Command definitions — locate the CLI framework entry point and command registrations:
+   - For Node.js: commander (.command()), yargs (.command()), oclif (commands/), meow, minimist
+   - For Python: click (@click.command), argparse (add_parser/add_argument), typer (@app.command)
+   - For Go: cobra (cmd/*.go, &cobra.Command{}), urfave/cli
+   - For Rust: clap (#[command], #[arg]), structopt
+
+2. For each command/subcommand, extract:
+   - Command name and aliases
+   - Description/help text (from .description(), help= parameter, docstring, or #[doc])
+   - All flags/options: name, short alias, type, default value, required?, description
+   - Positional arguments: name, type, required?, description
+   - Subcommand tree structure (parent → child relationships)
+
+3. Global options (flags shared across all commands):
+   - --verbose, --config, --output-format, etc.
+
+4. Configuration file support (if any):
+   - Config file format (YAML, TOML, JSON, INI)
+   - Config file search paths
+   - Relationship between config options and CLI flags
+
+Return results as a markdown table with columns:
+| # | Command | Subcommands | Flags/Options | Description | Source File |
+```
+
+**Profile selection**: Choose the profile based on Phase 1 Step 1.0 frontend detection + project structure:
+- Has API routers/controllers → **Profile A**
+- Frontend-only (no backend) → **Profile B**
+- Has CLI framework (commander, click, cobra, clap, etc.) → **Profile C**
+- Mixed (e.g., CLI + API server) → Use **Profile A + C** together
+
+Compile results into a **Feature Inventory Table** (format varies by profile):
+
+Profile A/B example:
 ```
 | # | Feature Area | Backend Source | Endpoints | Key Operations | Data Models | Frontend Pages |
 |---|---|---|---|---|---|---|
 | 1 | Agent Registry | routers/agents.py | 12 | CRUD + WS + health | Agent, AgentConfig | /agents, /agents/[id] |
 | 2 | Approvals | routers/approvals.py | 8 | Create + Review | ApprovalRequest, Rule | /approvals |
-| 3 | Audit Trail | routers/audit.py | 5 | Search + Export | AuditEvent | /audit |
-| ... | ... | ... | ... | ... | ... | ... |
+```
+
+Profile C example:
+```
+| # | Command | Subcommands | Flags/Options | Description | Source File |
+|---|---|---|---|---|---|
+| 1 | init | — | --template, --force | Initialize a new project | src/commands/init.ts |
+| 2 | deploy | preview, production | --env, --region, --dry-run | Deploy to cloud | src/commands/deploy.ts |
+| 3 | config | get, set, list | --global | Manage configuration | src/commands/config.ts |
 ```
 
 ## Step 2B.2: Feature Depth Classification
 
-Classify each feature from the inventory into documentation depth tiers:
+Classify each feature from the inventory into documentation depth tiers. "Complexity units" = endpoints for APIs, commands/subcommands for CLIs, components for frontend, or exported functions for libraries:
 
 | Tier | Criteria | Docs Treatment |
 |------|----------|---------------|
-| **Tier 1: Hero Feature** | 8+ endpoints, complex data model, or core differentiator | Full section: 150-250 words, diagram or code example, explain the mechanism |
-| **Tier 2: Core Feature** | 4-7 endpoints, clear user value | Feature card: 50-100 words, explain what + why, link to detail |
-| **Tier 3: Supporting** | 1-3 endpoints, utility/config nature | Feature card: 20-40 words, brief mention |
+| **Tier 1: Hero Feature** | 8+ complexity units, complex data model, or core differentiator | Full section: 150-250 words, diagram or code example, explain the mechanism |
+| **Tier 2: Core Feature** | 4-7 complexity units, clear user value | Feature card: 50-100 words, explain what + why, link to detail |
+| **Tier 3: Supporting** | 1-3 complexity units, utility/config nature | Feature card: 20-40 words, brief mention |
 | **Omit** | Internal-only, admin debug, or incomplete | Do NOT document — avoid documenting vaporware |
 
 **Tier classification signals**:
-- A feature with its own frontend page = at least Tier 2
+- A feature with its own frontend page or top-level CLI command = at least Tier 2
 - A feature mentioned in CLAUDE.md as a core value prop = at least Tier 1
-- A feature with only GET endpoints and no dedicated UI = likely Tier 3
+- A feature with only GET endpoints / read-only commands and no dedicated UI = likely Tier 3
 - A feature with `# TODO` or `# WIP` comments = Omit
 
 ## Step 2B.3: Content Evidence Collection

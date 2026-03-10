@@ -12,9 +12,9 @@ You built your project with Claude Code or Codex in record time. But the docs si
 
 ## What This Skill Does
 
-`docs-site-gen` is an [AI coding skill](https://docs.anthropic.com/en/docs/claude-code/skills) that generates and maintains full documentation websites integrated into your existing web app. It works in 5 phases:
+`docs-site-gen` is an [AI coding skill](https://docs.anthropic.com/en/docs/claude-code/skills) that generates and maintains full documentation websites for any project — web apps, backend APIs, CLI tools, libraries, MCP servers, and more. It works in 5 phases:
 
-1. **Design System Detection** — Reads your `globals.css`, Tailwind config, and existing pages to match your project's visual identity. No generic templates that look out of place.
+1. **Design System Detection** — Reads your `globals.css`, Tailwind config, and existing pages to match your project's visual identity. No frontend? Choose from 4 curated templates and custom color schemes, with optional HTML previews.
 2. **Deep Content Mining** — Reads your routers, models, and services to build a verified feature inventory. Every claim in the docs traces back to real code.
 3. **Content Planning (with your approval)** — Produces a detailed content outline mapping each section to its source file. You review and approve before any code is generated.
 4. **Page Generation** — Outputs Next.js page components with full i18n, SEO metadata, section anchors, and `llms.txt` for AI readability.
@@ -22,7 +22,8 @@ You built your project with Claude Code or Codex in record time. But the docs si
 
 ### Key Features
 
-- **Evidence-based content**: Reads actual source code (routers, models, services) — not CLAUDE.md/README summaries. Feature descriptions include real mechanisms (protocols, data flows, API endpoints), not marketing adjectives.
+- **Evidence-based content**: Reads actual source code (routers, models, services, CLI commands) — not CLAUDE.md/README summaries. Feature descriptions include real mechanisms (protocols, data flows, API endpoints), not marketing adjectives.
+- **Any project type**: Web apps with frontend, backend APIs, CLI tools, libraries/SDKs, MCP servers — auto-detects project type and adapts the workflow. Scaffolds standalone docs sites for projects without a web frontend.
 - **8 curated style presets**: Inspired by Stripe, Vercel, Tailwind, GitHub, Supabase, Linear, Anthropic, and Notion docs. Or auto-detects your project's existing design system.
 - **AI-friendly by default**: SSR-rendered content accessible via `curl`. Section anchors on all headings. Auto-generated `llms.txt` and `llms-full.txt` so other AI tools can read your docs.
 - **Bilingual i18n**: Generates both `en-US` and `zh-CN` (or adapts to your project's language setup). Every string goes through i18n — no hardcoded text.
@@ -34,8 +35,10 @@ You built your project with Claude Code or Codex in record time. But the docs si
 ## Requirements
 
 - An AI coding client that supports the [SKILL.md format](#supported-clients)
-- A web frontend project (Next.js App Router recommended)
-- Node.js + pnpm/npm for validation commands
+- Any project type: web app (Next.js recommended), backend API, CLI tool, library/SDK, MCP server, etc.
+- For projects with a web frontend: integrates docs into your existing app
+- For projects without a frontend: scaffolds a standalone docs site or generates static HTML
+- Node.js + pnpm/npm for validation commands (when using Next.js output)
 
 ## Installation
 
@@ -182,6 +185,7 @@ docs-site-gen/
 │           ├── templates.md              # Large code templates (layout, search, TOC)
 │           ├── page-templates.md         # Section skeletons per page type
 │           ├── style-presets.md          # 8 curated style presets
+│           ├── standalone-mode.md       # No-frontend workflow (templates, colors, demo HTML)
 │           └── anti-patterns.md          # Common mistakes & troubleshooting
 ├── .claude-plugin/
 │   └── plugin.json                       # Claude Code marketplace metadata
