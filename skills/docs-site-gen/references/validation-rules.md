@@ -11,7 +11,7 @@ After generation, run ALL checks in order. Do not skip any.
 - **5.2 AI-Friendly & SEO Validation** — Heading IDs, llms.txt, Server/Client split, JSON-LD, sitemap/robots, hreflang
 - **5.3 Content Quality Audit** — Re-verify claims, check specificity, bilingual quality
 - **5.4 Visual Review Prompt** — Tell user how to launch dev server and preview
-- **5.5 Cross-Cutting Guards** — Final sweep before CP3: diagram a11y + mock-data check, quantitative claim re-verification, stale tech token grep, i18n-None language match
+- **5.5 Cross-Cutting Guards** — Final sweep before CP3: diagram validation (format + content authenticity), quantitative claim re-verification (with drift threshold + aggregate consistency), stale tech token sweep (incl. negation-context leaks)
 
 ## 5.0 Implementation Completeness Verification
 
@@ -222,13 +222,15 @@ Scan generated descriptions for vague language. Flag any description that:
 
 For each flagged description, enrich with a specific detail from the codebase.
 
-### 5.3.3 Bilingual Quality Check
+### 5.3.3 Bilingual / Single-Language Quality Check
 
-For zh-CN translations:
+**For i18n-Multi (zh-CN translations)**:
 - Verify translations are natural Chinese, not word-for-word machine translation
 - Technical terms should use industry-standard Chinese translations (e.g., "审计追踪" not "审核小道")
 - Product names and protocol names (MCP, A2A, SSE) should remain in English
 - Verify zh-CN descriptions convey the same meaning as en-US (not just similar)
+
+**For i18n-None (inline text)**: confirm every generated string matches the project's primary content language. If existing pages use Chinese, every new section title / body / button / callout must be Chinese — never silently fall back to English. Quick check: `grep -E '[一-龥]' app/docs/**/content.tsx | wc -l` should return a non-trivial count when the project is Chinese-first.
 
 ## 5.4 Visual Review Prompt
 
@@ -285,7 +287,7 @@ Adapt the unit list to the project's actual vocabulary — sample the rendered d
 
 **Step 3 — Re-run the count** using the recipes in `content-mining.md` Step 2B.4.1.
 
-**Step 4 — Apply the drift threshold (`anti-patterns.md` #28)** to each claim:
+**Step 4 — Apply the drift threshold to each claim.** The `+` suffix is a tolerance, not a forever-shield — re-count every release.
 
 | Drift (`actual / claimed - 1`) | Action |
 |---|---|
@@ -317,15 +319,7 @@ grep -rin 'TOKEN' app/docs/ public/llms*.txt
 
 Any hit must be rewritten to reflect the **current** stack before publishing. Pay special attention to `public/llms.txt` and `public/llms-full.txt` — they're the AI-readable mirror of the docs and aren't visible in normal QA, so they drift fastest.
 
-**Negation context is NOT a free pass** (see `anti-patterns.md` #27). Even if the surrounding sentence says "blocked", "removed", "已禁用", or "anti-regression", the token still leaks into AI-agent token-level scanners. Rewrite to use category words (e.g., "blocks legacy external UI frameworks" instead of "blocks Fluent UI / Dockview"). Inside source comments and CHANGELOG the explicit name is fine; in `llms*.txt` it's a leak.
-
-Real-world examples:
-- Docs claimed "Fluent UI v9 ... Dockview 4.3+" months after both were ESLint-banned and removed from `package.json` (case A — forgotten update, #23).
-- `llms-full.txt` said "ESLint no-restricted-imports 反退化门强制阻止 Fluent UI / Dockview 等历史依赖回归" — token-leak via meta-description (case B — #27). Rewrote to "强制阻止历史外部 UI 框架回归".
-
-### 5.5.4 i18n-None Language Match
-
-When the project is `i18n-None` (inline text), verify all generated text matches the project's primary content language. If existing pages use Chinese inline strings, every new section title, body copy, button label, callout text, and JSX literal MUST be Chinese — never silently fall back to English. Verification: `grep -E '[一-龥]' app/docs/**/content.tsx | wc -l` should return a non-trivial count when the project is Chinese-first.
+**Negation context is NOT a free pass** (see `anti-patterns.md` #23). Even if the sentence says "blocked", "removed", "已禁用", or "anti-regression", the token still leaks into AI-agent token-level scanners. Rewrite to category words (e.g., "blocks legacy external UI frameworks" instead of "blocks Fluent UI / Dockview"). In source comments / CHANGELOG the explicit name is fine — only `llms*.txt` is the AI-token surface.
 
 ## CP3 Output
 

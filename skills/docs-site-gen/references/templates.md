@@ -827,7 +827,7 @@ export function HubAndSpokePanorama({ className = '' }: DiagramProps) {
     { angle: -90,  label: 'MCP protocol', sub: 'GitHub / Notion / internal', tone: BRAND_SECONDARY },
     { angle: -30,  label: 'OAuth', sub: 'Google / Microsoft', tone: BRAND_PRIMARY },
     { angle: 30,   label: 'Presenton', sub: 'PPT engine', tone: BRAND_TERTIARY },
-    { angle: 90,   label: 'Remote OctoReport', sub: 'integration_key server-only', tone: BRAND_SECONDARY },
+    { angle: 90,   label: 'Remote service', sub: 'integration key server-only', tone: BRAND_SECONDARY },
     { angle: 150,  label: 'Web tools', sub: 'webSearch / urlFetch', tone: BRAND_TERTIARY },
   ]
   const cx = 360

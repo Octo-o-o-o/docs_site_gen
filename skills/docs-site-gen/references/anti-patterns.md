@@ -4,9 +4,10 @@ Common mistakes to avoid when using this skill, and solutions for frequent issue
 
 ## Contents
 
-- **Anti-Patterns 1–10**: Visual & structural — hardcoded colors, skipping design detection, monolithic components, i18n key mismatches, lazy-loaded content, missing heading IDs, ignoring existing components, overriding customizations, dynamic imports for docs, generating without reading
-- **Anti-Patterns 11–15**: Content quality — CLAUDE.md-only paraphrasing, vague adjectives, skipping CP2 outline review, documenting vaporware, generic "how it works" steps
-- **Anti-Patterns 16–28**: Update & layout & diagrams & numeric claims — full rewrite instead of incremental update, skipping codebase rescan, skipping completeness verification, guessing configuration, synthesizing code examples, wrong navigation layout for content volume, mixing nav patterns, leaving stale tech tokens after a stack migration, documenting counts without code verification (#24), SVG diagrams with placeholder/lorem mock data (#25), SVG diagrams with clipped labels at the viewBox edge (#26), **embedding retired tokens in anti-regression meta-descriptions (#27)** — yes, even when the surrounding sentence says "blocked / removed", **`+` suffix used as a forever-excuse against drift (#28)** — drift > 30% means rewrite, drift > 50% means hard error
+- **#1–10**: Visual & structural mistakes (hardcoded colors, skipped design detection, monolithic components, i18n key drift, missing heading IDs, lazy-loaded content, etc.)
+- **#11–15**: Content-quality mistakes (CLAUDE.md-only paraphrasing, vague adjectives, skipped CP2 review, documenting vaporware, generic "how it works")
+- **#16–22**: Update-mode & layout mistakes (full rewrite instead of update, skipped rescans, guessing configuration, synthesizing examples, wrong layout for volume, mixing nav patterns)
+- **#23–26**: Stale tokens & diagrams & numeric claims (stale tech tokens incl. negation-context leaks, undocumented counts, placeholder mock data in SVG, clipped diagram labels)
 - **Troubleshooting**: TypeScript errors, missing i18n keys, broken imports, JSON-LD parse failures
 - **Recovery Steps**: What to do when generation halts partway
 
@@ -323,13 +324,18 @@ Always present the recommendation to the user and let them choose. If the user i
 
 ---
 
-### 23. Leaving Stale Tech Tokens After a Stack Migration
+### 23. Stale Tech Tokens in docs / llms.txt
 
-**Wrong:** The project has migrated away from a library or framework (e.g., the codebase explicitly retired Fluent UI, Dockview, or some legacy router), but the docs and especially `public/llms.txt` / `public/llms-full.txt` still list it. This happens because llms.txt is the AI-readable mirror of the docs and isn't visible during normal QA, so it drifts faster than on-page content. AI agents reading the public llms.txt then describe the project with a stack that no longer matches reality.
+**Wrong:** The project retired a library / framework (codebase explicitly removed Fluent UI, Dockview, some legacy router) but the docs and especially `public/llms.txt` / `public/llms-full.txt` still mention it. Two flavours appear in practice:
 
-**How to detect:** During Update Mode U1, read CLAUDE.md / ESLint configs / CI gates / saved memory for "removed", "已移除", "deprecated", "anti-regression: blocked" markers. Then `grep` the docs folder AND `public/llms*.txt` for those exact tokens.
+- **Flavour A — forgotten:** "Fluent UI v9" still in the tech stack table, no one updated it after the migration.
+- **Flavour B — negation-context leak:** The docs *intentionally* name the retired token in a sentence like "ESLint blocks Fluent UI / Dockview from regression". The author meant "these are blocked", but `llms*.txt` is read by AI agents at the **token** level — `Fluent UI` / `Dockview` get indexed regardless of the surrounding negation, and downstream summaries describe the project as using them.
 
-**Correct:** Treat llms.txt as a first-class doc surface. Every Update Mode run includes the stale-tech-token grep across both `app/docs/**` and `public/llms*.txt`, and rewrites every hit so the description matches the *current* code (e.g., "Fluent UI v9" → "in-house design-system (headless + Tailwind)"). Do not let an llms.txt change "wait for the next pass" — by then the AI search results have already cached the wrong stack.
+**How to detect:** During Update Mode U1 / Phase 5.5.3, read CLAUDE.md / ESLint configs / CI gates / saved memory for retired-token markers (`removed`, `已移除`, `deprecated`, `anti-regression: blocked`). Then `grep -rin TOKEN app/docs/ public/llms*.txt`. Any hit is a leak — negation context is **not** a free pass.
+
+**Correct:**
+- Flavour A: rewrite to the current stack (e.g., "Fluent UI v9" → "in-house design-system (headless + Tailwind)").
+- Flavour B: replace specific names with category words (e.g., "blocks Fluent UI / Dockview" → "blocks legacy external UI frameworks"). Inside source comments / commit messages / CHANGELOG, naming the retired token is fine and useful — only `llms*.txt` is the AI-token surface.
 
 ---
 
@@ -380,48 +386,6 @@ Mock data in diagrams is **descriptive evidence**, not decoration. Treat it with
 3. If a label hangs off, fix in this preference order: (a) increase viewBox height/width, (b) shift `cx/cy` to recenter, (c) reduce `r`, (d) reduce label offset.
 
 Real-world example: panorama diagram with 6 branches, viewBox `720 × 360`, `cy=170`, `r=130`, `labelOffset=60` → top label at `y = -20` (clipped). Fix: viewBox `720 × 460`, `cy=220` → all labels inside.
-
----
-
-### 27. Embedding Retired Tokens in Anti-Regression Meta-Descriptions
-
-**Wrong:** Writing about a CI gate / lint rule / migration history in a way that *names the retired tokens themselves* — for example, in `public/llms-full.txt`:
-
-> "ESLint no-restricted-imports 反退化门强制阻止 Fluent UI / Dockview 等历史依赖回归。"
-
-The author meant: "these libraries are blocked." But `llms.txt` / `llms-full.txt` are read by AI agents (Perplexity, Claude, GPT) at the **token** level, not the sentence level. Token-level scanners pick up `Fluent UI` and `Dockview` and conclude the project uses them — exactly the opposite of what was intended.
-
-This is distinct from #23 (forgotten tokens that simply weren't updated). Here the token leak is intentional but the framing leaks the token anyway.
-
-**How to detect:** During Phase 5.5.3 (or Update-Mode U1 stale-token grep), don't treat negation context (`不再用`, `已移除`, `禁用`, `blocked`, `removed`, `deprecated`, `legacy`) as a free pass. Any occurrence of a retired token in `public/llms*.txt` is a leak, full stop, regardless of surrounding sentence.
-
-**Correct:** Replace specific token names with category words, OR move the meta-description out of `llms.txt`:
-
-| Leaky | Token-safe |
-|---|---|
-| "blocks Fluent UI / Dockview from regression" | "blocks legacy external UI frameworks from regression" |
-| "no longer uses Mongoose ORM" | "uses an in-house data layer; legacy ORM removed" |
-| "old Express middleware deprecated in v3" | "v3 retired the previous Node middleware stack" |
-
-Apply only to AI-readable surfaces (`public/llms*.txt`). Inside source comments / commit messages / CHANGELOG, naming the retired token is fine and useful.
-
----
-
-### 28. `+` Suffix Used as a Forever-Excuse Against Drift
-
-**Wrong:** Documenting "70+ services", "321+ IPC handlers", "10+ audit types" and treating `+` as license to skip re-counting forever. The `+` softens a number — it does NOT make it correct at any scale.
-
-Real-world example: docs claimed "321+ IPC handlers" — actual count was 567 (drift = +75%). The `+` was technically truthful (567 > 321) but readers interpret `+` as "approximately N" or "slightly more than N", not "75% more than N".
-
-**Threshold rule:**
-- **Drift ≤ 10%**: `N+` is fine, no action required
-- **Drift 10–30%**: rewrite to a tighter number with the same `+` style (e.g., `321+` → `550+` if reality is 567)
-- **Drift > 30%**: lock to a precise count tied to a source-of-truth file path so future readers know where to re-verify (e.g., `567 IPC handlers (count: \`grep -rE "ipcMain\\.handle\\(" electron/\`)`)
-- **Drift > 50%**: hard error during Phase 5.5.2 — block CP3 until fixed
-
-**How to detect:** Phase 5.5.2 grep extracts every `\d+\+` claim, re-runs the count from the source-of-truth recipe, computes drift percentage, and applies the threshold rule above.
-
-**Correct:** Re-count every `+` claim every release. The `+` is a tolerance, not a forever-shield.
 
 ---
 

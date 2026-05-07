@@ -650,22 +650,9 @@ Common bug: labels at the extreme top/bottom/left/right of a circular or radial 
 
 Test: open the rendered diagram at desktop viewport, take a screenshot, and verify every label is fully visible. If you can't take a screenshot, mentally trace each label's bounding box vs. viewBox.
 
-### 4.9.7 Diagram-Per-Page Recommendations
+### 4.9.7 Per-Page Recommendations & Cap
 
-Default mappings — adapt based on actual content. See `references/templates.md` for code.
-
-| Page Type | Recommended Archetype(s) | Why |
-|---|---|---|
-| Overview / Landing | None (rely on feature vignettes already on homepage) or 1 system-overview | Avoid duplicating homepage illustrations |
-| Architecture | LayeredArchitecture + DualPathDecision (if branching) | Most architecture pages have 2-3 layers + at least one decision/routing point |
-| Security | LayeredArchitecture (e.g., encryption layers) + EventTimeline (e.g., audit log) | Security has clear layers and time-ordered events |
-| Integrations | HubAndSpokePanorama | Always at least 4 integration partners |
-| Getting Started | HorizontalStepFlow | Always a numbered procedure |
-| API Reference | None (the endpoint table IS the visual) or 1 request/response shape | Tables already visual |
-| Configuration | None | Tables already visual |
-| FAQ | None | Q&A list IS the visual |
-
-**Cap: 1-2 diagrams per page max.** More creates noise. If a page seems to need 3+, the page is doing too many things — split it.
+For per-page archetype recommendations, see `references/page-templates.md` → "Recommended diagram per page type" table. **Cap: 1–2 diagrams per page max.** More creates noise; if a page seems to need 3+, the page is doing too many things — split it.
 
 ### 4.9.8 Validation
 
