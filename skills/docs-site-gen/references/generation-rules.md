@@ -14,6 +14,7 @@ Generate pages following the resolved design conventions. Apply these rules:
 - **4.6 Evidence-Based Content Generation** — Tier-driven word counts, specificity over adjectives, verified code examples
 - **4.7 i18n Key Naming Convention** — Match project conventions; one rule per i18n level
 - **4.8 Navigation Updates** — Update homepage links + footer + docs internal nav
+- **4.9 Visual Diagrams (Server-Safe SVG)** — When to draw, how to match brand, mock data quality, viewBox safety, per-page archetype recommendations
 
 ## 4.1 File Structure
 
@@ -544,3 +545,135 @@ After generating pages, update navigation:
 2. Update docs link from `/docs/self-host` (or current) to `/docs` (new landing page)
 3. Update footer docs links similarly
 4. If a docs layout with nav was created, ensure all sub-pages are listed
+
+## 4.9 Visual Diagrams (Server-Safe Inline SVG)
+
+Long stretches of prose, multi-component architectures, and multi-step flows benefit from visual diagrams. Generate them as **inline server-safe React SVG components** — not external images, not Mermaid (which requires client JS), not screenshots (which become stale). See `references/templates.md` → "Diagram Templates" for 5 ready-to-adapt archetypes.
+
+### 4.9.1 When to Generate a Diagram
+
+Add a diagram to a section when ANY of:
+
+- The section is **3+ paragraphs of dense prose** with no other visual element (table, card grid, code block)
+- The content describes a **multi-component system** (≥3 components with relationships) — show layout, not list
+- The content describes a **flow with ≥3 steps** — show as horizontal/vertical timeline, not numbered paragraphs alone
+- The content describes a **branching decision** (e.g., dual-engine routing) — show both paths in parallel
+- The content lists **≥4 integration partners / sources** — show as hub-and-spoke panorama
+- The content is a **time-series record** (audit log, event log) — show as timeline with mock event chips
+
+Skip diagrams when the section already has a card grid, comparison table, or code block carrying the structural load — adding another visual creates noise.
+
+### 4.9.2 Visual Style — Match the Project
+
+Before drawing a single SVG, **read 2-3 existing illustrations** in the project's homepage / marketing pages (e.g., feature vignettes, product screenshots-as-SVG). Extract:
+
+- **Palette**: primary brand color, secondary accent, faint stroke, card background. Use the same hex values — don't pick fresh colors. Check `tailwind.config.*` and `src/styles/tokens.css` first; fall back to reading rendered illustrations.
+- **Stroke weight**: 1.4 / 1.6 / 2 — pick one and stick to it across all diagrams in this round
+- **Card backdrop**: cream / white / tinted — match the homepage card fill
+- **Stroke style for connectors**: solid / dashed / dotted — match existing flow lines
+- **Typography**: same `font-family` (often `var(--font-sans)` and `var(--font-mono)`)
+- **Border radius**: 6 / 10 / 14 — match the homepage card radius
+
+If the project has 0 illustrations (greenfield), use the style preset's palette (`references/style-presets.md`).
+
+### 4.9.3 Component Pattern
+
+Centralize all diagrams in **one file**: `app/docs/_components/Diagrams.tsx` (or framework-equivalent). Each archetype is a **named export** that takes optional `className`:
+
+```tsx
+// app/docs/_components/Diagrams.tsx — server-safe, NO "use client"
+
+const BRAND_PRIMARY = '#2A4032'  // from tailwind.config.ts
+const BRAND_SECONDARY = '#5D7052'
+const BRAND_TERTIARY = '#8A9B85'
+const CARD_BG = '#FDFCF8'
+const STROKE_FAINT = 'rgba(42,64,50,0.18)'
+
+interface DiagramProps { className?: string }
+
+export function HorizontalStepFlow({ className = '' }: DiagramProps) {
+  const steps = [
+    { num: '01', title: '试用申请', sub: '提交企业信息' },
+    // ... rest of mock data
+  ]
+  return (
+    <div className={`card !p-6 md:!p-8 overflow-hidden ${className}`}>
+      <svg viewBox="0 0 720 200" className="w-full h-auto" role="img" aria-label="部署 5 步流程示意图">
+        {/* connectors + step nodes + labels */}
+      </svg>
+    </div>
+  )
+}
+```
+
+**Why server-safe:** static export (`output: 'export'`) and Next.js streaming SSR both work cleanly when the SVG renders during server pass. Avoid `useState`/`useEffect`; avoid framer-motion; avoid `client-only` libraries — they break SSR or pull in client bundles needlessly.
+
+**Why centralized:** brand color constants live in one place; if the project's tokens shift, you update once. Every consumer page does `import { Foo } from '../_components/Diagrams'`.
+
+### 4.9.4 Mandatory Accessibility
+
+Every `<svg>` MUST have:
+
+- `role="img"` — tells AT it's a graphic, not an icon group
+- `aria-label="<concrete description>"` — used by screen readers AND by AI tools (Claude / Perplexity / GPT) when summarizing the page
+
+Bad: `aria-label="diagram"`. Good: `aria-label="千手三层加密架构示意图"` (specific, project-named).
+
+Page-level test: every diagram on the page must produce a unique `aria-label`. Two diagrams with the same label is a bug.
+
+### 4.9.5 Mock Data Quality (CRITICAL)
+
+The whole point of "with mock data" is that the diagram looks like a screenshot of real product output. **Never** use placeholder lorem ipsum, "Item 1 / Item 2 / Item 3", or empty boxes.
+
+**Use realistic, project-specific mock values:**
+
+| Visualization Type | Bad mock | Good mock |
+|---|---|---|
+| Audit timeline | "Event A / Event B / Event C" | `AI_CALL` `EMAIL_SEND` `BASH_EXEC` `MCP_CALL` `FILE_EDIT` |
+| Timestamp axis | "T1 / T2 / T3" | `14:02:11 / 14:03:47 / 14:05:09` (monotonic, realistic gaps) |
+| Actor field | "user1 / user2" | `agent.assistant`, `agent.coder`, `github.search`, `user` |
+| API endpoint chip | "/api/x" | `/api/ai/execute`, `/api/audit/logs` |
+| Engine / model name | "Engine A / Engine B" | `DirectEngine` / `ProxyEngine` (real engine names from Phase 2B.3) |
+| Provider list | "Provider 1, 2, 3" | `OpenAI · 火山 · 阿里云` (real providers from `tech stack` table) |
+| Step labels | "Step 1, Step 2" | `01 试用申请 → 02 客户端安装 → 03 服务端连接` (action verbs from getting-started page) |
+| Token / id | "abc123" | `token #1024`, `agent.coder` |
+
+**Sources for realistic mock:** Phase 2B.3 evidence collection (capabilities, code paths), Phase 2B.6 config inventory (env vars), Phase 2B.7 verified code examples (real test data shapes). Do NOT invent — pull from material you've already mined.
+
+### 4.9.6 ViewBox Sizing — Avoid Label Clipping
+
+Common bug: labels at the extreme top/bottom/left/right of a circular or radial layout get clipped because the SVG `viewBox` doesn't account for the label box's full extent. Always:
+
+1. Compute the **outermost label coordinate** (e.g., for a hub-and-spoke at angles `[-150,-90,-30,30,90,150]` with `r=130` and `labelOffset=60`, the topmost label is at `cy - (r + labelOffset)`).
+2. Verify the outermost label's bounding box (including its own height/width) stays inside `viewBox` by **at least 8px on every side**.
+3. If a label hangs off, fix by either: (a) increasing viewBox dimensions, (b) moving `cy/cx` to recenter, (c) reducing `r`, OR (d) reducing label offset — in that order of preference.
+
+Test: open the rendered diagram at desktop viewport, take a screenshot, and verify every label is fully visible. If you can't take a screenshot, mentally trace each label's bounding box vs. viewBox.
+
+### 4.9.7 Diagram-Per-Page Recommendations
+
+Default mappings — adapt based on actual content. See `references/templates.md` for code.
+
+| Page Type | Recommended Archetype(s) | Why |
+|---|---|---|
+| Overview / Landing | None (rely on feature vignettes already on homepage) or 1 system-overview | Avoid duplicating homepage illustrations |
+| Architecture | LayeredArchitecture + DualPathDecision (if branching) | Most architecture pages have 2-3 layers + at least one decision/routing point |
+| Security | LayeredArchitecture (e.g., encryption layers) + EventTimeline (e.g., audit log) | Security has clear layers and time-ordered events |
+| Integrations | HubAndSpokePanorama | Always at least 4 integration partners |
+| Getting Started | HorizontalStepFlow | Always a numbered procedure |
+| API Reference | None (the endpoint table IS the visual) or 1 request/response shape | Tables already visual |
+| Configuration | None | Tables already visual |
+| FAQ | None | Q&A list IS the visual |
+
+**Cap: 1-2 diagrams per page max.** More creates noise. If a page seems to need 3+, the page is doing too many things — split it.
+
+### 4.9.8 Validation
+
+After generating diagrams, verify (Phase 5.2 already covers this):
+
+- [ ] Every diagram has `role="img"` + unique `aria-label`
+- [ ] Every diagram renders during SSR (no white-on-load — check by `curl <page> | grep -c '<svg'`)
+- [ ] All labels visible at desktop viewport (no clipping)
+- [ ] No `lorem` / `placeholder` / `Foo Bar` mock values
+- [ ] Brand colors match existing project palette (no fresh hex values)
+- [ ] Centralized in `_components/Diagrams.tsx` (or equivalent), not scattered inline

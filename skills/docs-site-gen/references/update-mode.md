@@ -85,7 +85,11 @@ Read all existing docs pages and extract their current content inventory:
 
    Any hit becomes a U2 modification candidate. Hand-crafted docs and llms.txt files often outlive the tech they describe — this grep catches them in one pass.
 5. **JSON-LD coverage check** — For each existing docs page, run `grep -l 'application/ld+json' app/docs/**/page.tsx` (or equivalent for the project's framework). For every page that lacks it, flag in the Update Plan as a U4 addition (the schema rules in `generation-rules.md` 4.5F are mandatory; legacy hand-crafted docs almost always miss this).
-6. **Build a Current Content Inventory**:
+6. **Quantitative claim drift check** — Extract every numeric claim from existing docs (e.g., "11 个 Activity", "70+ services", "16+ API surfaces", "321+ IPC handlers", "10+ audit types"), then re-run the measurements from `content-mining.md` Step 2B.4.1 against the current codebase. If any claim drifted by more than its `+` tolerance, flag for U4 update. Pay special attention to:
+   - Registry / enum counts (most often drift after a refactor)
+   - "N+ handlers" / "N+ services" (commonly forgotten; never decrease in the doc even when code shrinks)
+   - Directory counts vs. logical counts (e.g., `activities/` has 11 dirs but registry has 13 IDs — doc must reflect the **logical** count)
+7. **Build a Current Content Inventory**:
 
 ```
 ## Current Docs Content Inventory

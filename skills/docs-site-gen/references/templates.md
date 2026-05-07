@@ -8,6 +8,12 @@ Large, copy-paste-ready code templates for docs generation. Referenced by `conve
 - **Search Component (CMD+K)** — SearchDialog + SearchButton with keyboard handling
 - **On-Page Table of Contents (Right-Side TOC)** — Sticky TOC with active-section highlighting via IntersectionObserver
 - **Previous/Next Page Navigation** — Cross-page nav links derived from sidebar/header order
+- **Diagram Templates (Server-Safe SVG)** — 5 archetypes for inline SVG illustrations:
+  - HorizontalStepFlow (Getting Started, 5 numbered steps)
+  - LayeredArchitecture (Security/Architecture, 3 layered columns with cross-arrows)
+  - DualPathDecision (Architecture, request → router → 2 parallel paths → sink)
+  - HubAndSpokePanorama (Integrations, central node + 6 radial branches; viewBox safety guidance for top/bottom labels)
+  - EventTimeline (Audit/Activity, horizontal timeline with N event cards + actor/timestamp)
 
 ## Docs Layout Templates
 
@@ -641,3 +647,280 @@ Place at the bottom of each page's content, before the footer:
 ```
 
 **Page order**: Follow the same order as the docs layout NAV_ITEMS array. Overview → Features → Architecture → Self-Host → API (or whatever the project uses).
+
+## Diagram Templates (Server-Safe SVG)
+
+Five archetypes to drop into `app/docs/_components/Diagrams.tsx`. See `generation-rules.md` 4.9 for when to use each. All templates are **server-safe** (no `"use client"`, no hooks, no third-party deps), accept an optional `className`, and ship with realistic mock data placeholders that you should replace with project-specific values from Phase 2B.
+
+**Color constants** (paste once at the top of `Diagrams.tsx`, replace hex values with the project's brand tokens):
+
+```tsx
+const BRAND_PRIMARY = '#2A4032'    // primary brand
+const BRAND_SECONDARY = '#5D7052'  // secondary accent
+const BRAND_TERTIARY = '#8A9B85'   // tertiary / muted callouts
+const CARD_BG = '#FDFCF8'          // cream card backdrop
+const STROKE_FAINT = 'rgba(42,64,50,0.18)'
+const STROKE_MEDIUM = 'rgba(42,64,50,0.35)'
+const TEXT_FAINT = 'rgba(42,64,50,0.55)'
+
+interface DiagramProps { className?: string }
+```
+
+### 1. HorizontalStepFlow — Getting Started Pages
+
+5 numbered circular nodes connected horizontally with a track + arrow markers. Card above each circle holds the step's title + sub-label; STEP `NN` label sits below.
+
+```tsx
+export function HorizontalStepFlow({ className = '' }: DiagramProps) {
+  // Replace with project-specific deployment / setup steps
+  const steps = [
+    { num: '01', title: 'Trial request', sub: 'Submit company info' },
+    { num: '02', title: 'Install client', sub: 'macOS / Win / Linux' },
+    { num: '03', title: 'Connect server', sub: 'JWT auth' },
+    { num: '04', title: 'Wire data', sub: 'Files + email' },
+    { num: '05', title: 'First AI call', sub: 'SSE streaming' },
+  ]
+  return (
+    <div className={`card !p-6 md:!p-8 overflow-hidden ${className}`}>
+      <svg viewBox="0 0 720 200" className="w-full h-auto" role="img" aria-label="Deployment 5-step flow diagram">
+        <line x1="60" y1="100" x2="660" y2="100" stroke={STROKE_FAINT} strokeWidth="2" />
+        {steps.map((s, i) => {
+          const x = 60 + i * 150
+          return (
+            <g key={s.num}>
+              <circle cx={x} cy="100" r="26" fill={i === 0 ? BRAND_PRIMARY : CARD_BG} stroke={BRAND_PRIMARY} strokeWidth="1.6" />
+              <text x={x} y="105" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="13" fontWeight="700" fill={i === 0 ? CARD_BG : BRAND_PRIMARY}>{s.num}</text>
+              <rect x={x - 60} y="30" width="120" height="44" rx="10" fill={CARD_BG} stroke={STROKE_FAINT} />
+              <text x={x} y="50" textAnchor="middle" fontFamily="var(--font-sans)" fontSize="11" fontWeight="600" fill={BRAND_PRIMARY}>{s.title}</text>
+              <text x={x} y="66" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="9" fill={TEXT_FAINT}>{s.sub}</text>
+              <text x={x} y="148" textAnchor="middle" fontFamily="var(--font-sans)" fontSize="10" fontWeight="600" fill={BRAND_SECONDARY}>STEP {s.num}</text>
+              {i < steps.length - 1 && (
+                <path d={`M ${x + 30} 100 L ${x + 116} 100 M ${x + 110} 96 L ${x + 116} 100 L ${x + 110} 104`} fill="none" stroke={BRAND_TERTIARY} strokeWidth="1.4" />
+              )}
+            </g>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
+```
+
+**ViewBox safety**: 5 steps × 150px stride + 60px left padding = 810px usable; viewBox is 720 — adjust to `60 + (n-1)*stride` if you have more/fewer steps.
+
+### 2. LayeredArchitecture — Security / Architecture Pages
+
+3 columns of layered components (e.g., encryption layers, trust boundaries). Each column has a colored header strip + 3 stacked items inside soft chips. Cross-column arrows imply data flow.
+
+```tsx
+export function LayeredArchitecture({ className = '' }: DiagramProps) {
+  // Replace with project-specific layers + items
+  const layers = [
+    { title: 'Local store', tone: BRAND_PRIMARY, items: [
+      { k: 'API keys', v: 'safeStorage (Keychain)' },
+      { k: 'Sessions', v: 'credentialStore' },
+      { k: 'Email body', v: 'AES-256 (crypto-js)' },
+    ]},
+    { title: 'Transport', tone: BRAND_SECONDARY, items: [
+      { k: 'Client ↔ Server', v: 'HTTPS / TLS 1.3' },
+      { k: 'Auth', v: 'JWT access + refresh' },
+      { k: 'AI streaming', v: 'SSE over HTTPS' },
+    ]},
+    { title: 'Server', tone: BRAND_TERTIARY, items: [
+      { k: 'Password hash', v: 'bcrypt (cost=12)' },
+      { k: 'Sensitive cols', v: 'AES-256 (crypto-js)' },
+      { k: 'Upstream API key', v: 'Server-only persistence' },
+    ]},
+  ]
+  return (
+    <div className={`card !p-6 md:!p-8 overflow-hidden ${className}`}>
+      <svg viewBox="0 0 720 280" className="w-full h-auto" role="img" aria-label="Three-layer encryption architecture diagram">
+        {layers.map((layer, i) => {
+          const x = 30 + i * 230
+          return (
+            <g key={layer.title}>
+              <rect x={x} y={30} width="200" height="220" rx="14" fill={CARD_BG} stroke={STROKE_FAINT} />
+              <rect x={x} y={30} width="200" height="34" rx="14" fill={layer.tone} />
+              <text x={x + 38} y={52} fontFamily="var(--font-sans)" fontSize="12" fontWeight="700" fill={CARD_BG}>{layer.title}</text>
+              {layer.items.map((item, j) => (
+                <g key={item.k} transform={`translate(${x + 16},${82 + j * 50})`}>
+                  <text x="0" y="0" fontFamily="var(--font-sans)" fontSize="10" fontWeight="600" fill={BRAND_PRIMARY}>{item.k}</text>
+                  <rect x="0" y="8" width="168" height="22" rx="6" fill="rgba(42,64,50,0.05)" />
+                  <text x="8" y="22" fontFamily="var(--font-mono)" fontSize="9" fill={TEXT_FAINT}>{item.v}</text>
+                </g>
+              ))}
+              {i < layers.length - 1 && (
+                <path d={`M ${x + 200} 140 L ${x + 224} 140 M ${x + 218} 136 L ${x + 224} 140 L ${x + 218} 144`} fill="none" stroke={BRAND_TERTIARY} strokeWidth="1.4" strokeDasharray="4 3" />
+              )}
+            </g>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
+```
+
+### 3. DualPathDecision — Architecture Pages with Branching
+
+A request → router diamond → two parallel paths → unified output. Each path has its own colored header. Useful for engine routing, traffic splits, A/B paths.
+
+```tsx
+export function DualPathDecision({ className = '' }: DiagramProps) {
+  return (
+    <div className={`card !p-6 md:!p-8 overflow-hidden ${className}`}>
+      <svg viewBox="0 0 720 320" className="w-full h-auto" role="img" aria-label="Dual-engine routing diagram">
+        {/* Source */}
+        <g transform="translate(20,124)">
+          <rect width="120" height="72" rx="14" fill={CARD_BG} stroke={STROKE_FAINT} />
+          <text x="60" y="28" textAnchor="middle" fontFamily="var(--font-sans)" fontSize="11" fontWeight="600" fill={BRAND_PRIMARY}>User request</text>
+        </g>
+        {/* Router */}
+        <g transform="translate(180,140)">
+          <path d="M 40,0 L 80,40 L 40,80 L 0,40 Z" fill={CARD_BG} stroke={BRAND_PRIMARY} strokeWidth="1.6" />
+          <text x="40" y="46" textAnchor="middle" fontFamily="var(--font-sans)" fontSize="10" fontWeight="600" fill={BRAND_PRIMARY}>Router</text>
+        </g>
+        {/* Top path */}
+        <g transform="translate(308,32)">
+          <rect width="200" height="100" rx="14" fill={CARD_BG} stroke={BRAND_PRIMARY} strokeWidth="1.4" />
+          <rect width="200" height="22" rx="14" fill={BRAND_PRIMARY} />
+          <text x="100" y="15" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="10" fontWeight="700" fill={CARD_BG}>DirectEngine</text>
+          <text x="14" y="44" fontFamily="var(--font-sans)" fontSize="10" fontWeight="600" fill={BRAND_PRIMARY}>User-owned model</text>
+          <text x="14" y="62" fontFamily="var(--font-mono)" fontSize="9" fill={TEXT_FAINT}>safeStorage / Keychain</text>
+        </g>
+        {/* Bottom path */}
+        <g transform="translate(308,196)">
+          <rect width="200" height="100" rx="14" fill={CARD_BG} stroke={BRAND_SECONDARY} strokeWidth="1.4" />
+          <rect width="200" height="22" rx="14" fill={BRAND_SECONDARY} />
+          <text x="100" y="15" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="10" fontWeight="700" fill={CARD_BG}>ProxyEngine</text>
+          <text x="14" y="44" fontFamily="var(--font-sans)" fontSize="10" fontWeight="600" fill={BRAND_PRIMARY}>Org-managed model</text>
+          <text x="14" y="62" fontFamily="var(--font-mono)" fontSize="9" fill={TEXT_FAINT}>/api/ai/execute</text>
+        </g>
+        {/* Connectors source → router → paths */}
+        <path d="M 140,160 L 180,180" fill="none" stroke={BRAND_TERTIARY} strokeWidth="1.4" strokeDasharray="4 3" />
+        <path d="M 260,170 C 280,140 290,100 308,82" fill="none" stroke={BRAND_PRIMARY} strokeWidth="1.4" strokeDasharray="4 3" />
+        <path d="M 260,210 C 280,230 290,250 308,246" fill="none" stroke={BRAND_SECONDARY} strokeWidth="1.4" strokeDasharray="4 3" />
+        {/* Sink */}
+        <g transform="translate(548,124)">
+          <rect width="152" height="72" rx="14" fill={CARD_BG} stroke={STROKE_FAINT} />
+          <text x="76" y="22" textAnchor="middle" fontFamily="var(--font-sans)" fontSize="11" fontWeight="600" fill={BRAND_PRIMARY}>SSE streaming</text>
+        </g>
+        <path d="M 508,82 C 540,82 540,150 548,150" fill="none" stroke={BRAND_PRIMARY} strokeWidth="1.4" strokeDasharray="4 3" />
+        <path d="M 508,246 C 540,246 540,170 548,170" fill="none" stroke={BRAND_SECONDARY} strokeWidth="1.4" strokeDasharray="4 3" />
+      </svg>
+    </div>
+  )
+}
+```
+
+### 4. HubAndSpokePanorama — Integration Pages
+
+Central node + radial spokes to N integration partners. Each spoke has a small dot at the orbit + an off-orbit label card.
+
+**ViewBox safety (CRITICAL):** Top label at angle `-90°` and bottom label at angle `+90°` are the most likely to clip. With `cy + (r + labelOffset) > viewBox.height - 8`, the bottom label clips. Always verify visually after generating. The default below uses `cy = viewBox.height/2 + 30` to leave more room below for the "annotation badge".
+
+```tsx
+export function HubAndSpokePanorama({ className = '' }: DiagramProps) {
+  // Distribute N branches around the circle, biased so labels fit
+  const branches = [
+    { angle: -150, label: 'Upstream AI', sub: 'OpenAI / VolcEngine', tone: BRAND_PRIMARY },
+    { angle: -90,  label: 'MCP protocol', sub: 'GitHub / Notion / internal', tone: BRAND_SECONDARY },
+    { angle: -30,  label: 'OAuth', sub: 'Google / Microsoft', tone: BRAND_PRIMARY },
+    { angle: 30,   label: 'Presenton', sub: 'PPT engine', tone: BRAND_TERTIARY },
+    { angle: 90,   label: 'Remote OctoReport', sub: 'integration_key server-only', tone: BRAND_SECONDARY },
+    { angle: 150,  label: 'Web tools', sub: 'webSearch / urlFetch', tone: BRAND_TERTIARY },
+  ]
+  const cx = 360
+  const cy = 220   // shifted DOWN so the top label has headroom
+  const r = 130
+  const labelOffset = 60
+  return (
+    <div className={`card !p-6 md:!p-8 overflow-hidden ${className}`}>
+      <svg viewBox="0 0 720 460" className="w-full h-auto" role="img" aria-label="Integration panorama">
+        <circle cx={cx} cy={cy} r={r + 8} fill="none" stroke={STROKE_FAINT} strokeDasharray="3 4" />
+        {branches.map((b) => {
+          const rad = (b.angle * Math.PI) / 180
+          const x = cx + Math.cos(rad) * r
+          const y = cy + Math.sin(rad) * r
+          const labelX = cx + Math.cos(rad) * (r + labelOffset)
+          const labelY = cy + Math.sin(rad) * (r + labelOffset)
+          return (
+            <g key={b.label}>
+              <line x1={cx} y1={cy} x2={x} y2={y} stroke={b.tone} strokeWidth="1.4" strokeDasharray="4 3" opacity="0.7" />
+              <circle cx={x} cy={y} r="8" fill={CARD_BG} stroke={b.tone} strokeWidth="1.6" />
+              <circle cx={x} cy={y} r="3" fill={b.tone} />
+              <g transform={`translate(${labelX},${labelY})`}>
+                <rect x="-72" y="-22" width="144" height="40" rx="10" fill={CARD_BG} stroke={STROKE_FAINT} />
+                <text x="0" y="-5" textAnchor="middle" fontFamily="var(--font-sans)" fontSize="10" fontWeight="700" fill={BRAND_PRIMARY}>{b.label}</text>
+                <text x="0" y="11" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="8" fill={TEXT_FAINT}>{b.sub}</text>
+              </g>
+            </g>
+          )
+        })}
+        <circle cx={cx} cy={cy} r="50" fill={BRAND_PRIMARY} />
+        <text x={cx} y={cy - 4} textAnchor="middle" fontFamily="var(--font-sans)" fontSize="14" fontWeight="700" fill={CARD_BG}>ProductName</text>
+        <text x={cx} y={cy + 14} textAnchor="middle" fontFamily="var(--font-mono)" fontSize="9" fill={CARD_BG} opacity="0.85">desktop client</text>
+      </svg>
+    </div>
+  )
+}
+```
+
+### 5. EventTimeline — Audit / Activity Log Pages
+
+Horizontal timeline with N event cards along a baseline. Each card shows a typed header (event type), an actor, and 3 mock detail bars. Time labels sit below. Legend explains the color coding.
+
+```tsx
+export function EventTimeline({ className = '' }: DiagramProps) {
+  // Replace with project-specific event types + realistic timestamps
+  const events = [
+    { t: '14:02:11', type: 'AI_CALL',     actor: 'agent.assistant', tone: BRAND_PRIMARY },
+    { t: '14:03:47', type: 'EMAIL_SEND',  actor: 'user',            tone: BRAND_SECONDARY },
+    { t: '14:05:09', type: 'BASH_EXEC',   actor: 'agent.coder',     tone: BRAND_PRIMARY },
+    { t: '14:08:33', type: 'MCP_CALL',    actor: 'github.search',   tone: BRAND_TERTIARY },
+    { t: '14:11:02', type: 'FILE_EDIT',   actor: 'user',            tone: BRAND_SECONDARY },
+  ]
+  return (
+    <div className={`card !p-6 md:!p-8 overflow-hidden ${className}`}>
+      <svg viewBox="0 0 720 240" className="w-full h-auto" role="img" aria-label="Audit event timeline">
+        <text x="20" y="22" fontFamily="var(--font-sans)" fontSize="11" fontWeight="600" fill={BRAND_PRIMARY}>/api/audit/logs · 2026-05-07</text>
+        <text x="20" y="38" fontFamily="var(--font-mono)" fontSize="9" fill={TEXT_FAINT}>mock — full request/response captured</text>
+        <line x1="60" y1="140" x2="700" y2="140" stroke={STROKE_FAINT} strokeWidth="1.4" />
+        {events.map((e, i) => {
+          const x = 90 + i * 130
+          return (
+            <g key={e.t}>
+              <line x1={x} y1="135" x2={x} y2="145" stroke={e.tone} strokeWidth="1.6" />
+              <rect x={x - 56} y="58" width="112" height="68" rx="10" fill={CARD_BG} stroke={STROKE_FAINT} />
+              <rect x={x - 56} y="58" width="112" height="18" rx="10" fill={e.tone} />
+              <text x={x} y="71" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="9" fontWeight="700" fill={CARD_BG}>{e.type}</text>
+              <text x={x} y="92" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="9" fill={BRAND_PRIMARY}>{e.actor}</text>
+              <rect x={x - 40} y="100" width="80" height="3" rx="1.5" fill={STROKE_FAINT} />
+              <rect x={x - 40} y="108" width="56" height="3" rx="1.5" fill={STROKE_FAINT} />
+              <rect x={x - 40} y="116" width="68" height="3" rx="1.5" fill={STROKE_FAINT} />
+              <line x1={x} y1="126" x2={x} y2="135" stroke={STROKE_MEDIUM} strokeWidth="1.2" strokeDasharray="2 2" />
+              <text x={x} y="160" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="9" fill={TEXT_FAINT}>{e.t}</text>
+            </g>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
+```
+
+### Per-Page Insertion
+
+After exporting from `Diagrams.tsx`, import into the corresponding `content.tsx`:
+
+```tsx
+import { HorizontalStepFlow } from '../_components/Diagrams'
+
+// inside the section:
+<SectionHeading id="five-steps">5 步部署流程</SectionHeading>
+<div className="mt-8">
+  <HorizontalStepFlow />
+</div>
+```
+
+For pages with multiple diagrams (e.g., security: encryption layers + audit timeline), import multiple named exports — they share the color constants, no per-import drift.

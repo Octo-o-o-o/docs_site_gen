@@ -8,6 +8,7 @@
 - **Step 2B.2: Feature Depth Classification** — Tier 1 (hero), Tier 2 (core), Tier 3 (supporting)
 - **Step 2B.3: Content Evidence Collection** — Read source code; collect verified capabilities, workflows, mechanisms
 - **Step 2B.4: Claim Verification** — Cross-check CLAUDE.md/README claims against code
+  - **2B.4.1 Quantitative Claim Verification** — Every numeric claim ("N services", "N+ handlers", "13 Activities") must be measured against a registry / array / type union; build a Quantitative Claim Table
 - **Step 2B.5: Project Identity Extraction** — Pitch, problem, differentiator, audience, maturity
 - **Step 2B.6: Configuration & Environment Scanning** — env vars, config schemas, build config
 - **Step 2B.7: Verified Code Examples** — Extract real snippets from tests and examples/
@@ -238,6 +239,66 @@ Rules:
 - **Partial**: Rephrase to match what actually exists (e.g., "budget alerts" instead of "budget circuit-breakers" if only alerts exist)
 - **Unverified**: REMOVE from documentation entirely — do not document features that don't exist
 - **Planned**: If a feature is clearly planned (has TODO/WIP markers), mention it in a "Roadmap" section only, never in feature descriptions
+
+### Step 2B.4.1: Quantitative Claim Verification
+
+**Beyond capability verification, every NUMERIC claim from CLAUDE.md/README must be measured against the actual codebase.** Counts drift faster than capability descriptions because nobody updates them — a refactor adds 2 routes, doc still says "16+ APIs"; a new feature adds 2 services, doc still says "70+ services". When the doc says **N**, ask: where is the source of truth, and what is N today?
+
+**Pattern A — Registry / config arrays** (most reliable):
+
+When the project has an enum, registry, or array that defines the set, count its entries directly:
+
+```bash
+# Activity registry: count ActivityIds in a TS union or APP_VIEWS array
+grep -cE "^\s*(id|slug):\s*'[a-z-]+'," src/app/viewRegistry.ts
+# → 13 (vs. doc claim "11 个 Activity")
+
+# Built-in agents
+grep -cE "^\s*slug: '" electron/services/builtinAgents.ts
+# → 18
+
+# IPC handlers (registered)
+grep -cE "ipcMain\.handle\(" electron/main.ts electron/services/*.ts | awk -F: '{s+=$2} END {print s}'
+# → 321
+```
+
+**Pattern B — File / directory presence**:
+
+```bash
+ls src/activities/ | grep -v __ | wc -l   # 11 dirs (note: differs from registry — see below)
+find server/src/api -name '*.ts' -not -name '*.test.*' | wc -l   # 16 API files
+```
+
+**Pattern C — Type union**:
+
+```bash
+# Count ActivityId union members
+grep -E "^\s+\| '[a-z-]+'" src/app/viewRegistry.ts | wc -l
+```
+
+**Mismatches to watch for**:
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Doc count > code count | Feature was removed but doc not updated | Lower the doc number; explain in CHANGELOG if needed |
+| Doc count < code count | Feature was added but doc not updated | Raise the doc number; consider whether the new feature deserves prose treatment |
+| Directory count ≠ registry count | Registry has logical entries that share dirs (e.g., 3 hidden Activities all live under `activities/hidden/`) | Doc must reflect the **logical / user-facing** count, not the directory count. State this explicitly: "13 ActivityId (10 default visible + 3 hidden, organized into 11 directories)". |
+| Vague suffix `70+` / `321+` | Originally truthful, never updated | Decide whether to keep the `+` suffix (acceptable when count fluctuates ±10%) or to lock to a precise number |
+
+**Build a Quantitative Claim Table** and include it in the Content Discovery Report:
+
+```
+### Quantitative Claims
+| Claim | Source-of-truth file | Counted today | Status |
+|---|---|---|---|
+| "13 个 Activity" | src/app/viewRegistry.ts | 13 | OK |
+| "18 个内置智能体" | electron/services/builtinAgents.ts | 18 | OK |
+| "70+ services" | electron/services/*.ts | 73 | OK (within `+` margin) |
+| "11 个 Activity" (old doc) | src/app/viewRegistry.ts | 13 | UPDATE → 13 |
+| "321+ IPC handlers" | grep ipcMain.handle | 321 | OK |
+```
+
+Apply the same table during incremental updates (`update-mode.md` U1) to catch drift quickly.
 
 ## Step 2B.5: Project Identity Extraction
 

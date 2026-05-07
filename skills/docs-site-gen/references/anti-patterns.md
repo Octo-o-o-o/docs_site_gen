@@ -6,7 +6,7 @@ Common mistakes to avoid when using this skill, and solutions for frequent issue
 
 - **Anti-Patterns 1–10**: Visual & structural — hardcoded colors, skipping design detection, monolithic components, i18n key mismatches, lazy-loaded content, missing heading IDs, ignoring existing components, overriding customizations, dynamic imports for docs, generating without reading
 - **Anti-Patterns 11–15**: Content quality — CLAUDE.md-only paraphrasing, vague adjectives, skipping CP2 outline review, documenting vaporware, generic "how it works" steps
-- **Anti-Patterns 16–23**: Update & layout — full rewrite instead of incremental update, skipping codebase rescan, skipping completeness verification, guessing configuration, synthesizing code examples, wrong navigation layout for content volume, mixing nav patterns, leaving stale tech tokens (e.g., retired framework names) in docs / llms.txt after a stack migration
+- **Anti-Patterns 16–26**: Update & layout & diagrams — full rewrite instead of incremental update, skipping codebase rescan, skipping completeness verification, guessing configuration, synthesizing code examples, wrong navigation layout for content volume, mixing nav patterns, leaving stale tech tokens after a stack migration, **documenting counts without code verification** (#24), **SVG diagrams with placeholder/lorem mock data** (#25), **SVG diagrams with clipped labels at the viewBox edge** (#26)
 - **Troubleshooting**: TypeScript errors, missing i18n keys, broken imports, JSON-LD parse failures
 - **Recovery Steps**: What to do when generation halts partway
 
@@ -330,6 +330,56 @@ Always present the recommendation to the user and let them choose. If the user i
 **How to detect:** During Update Mode U1, read CLAUDE.md / ESLint configs / CI gates / saved memory for "removed", "已移除", "deprecated", "anti-regression: blocked" markers. Then `grep` the docs folder AND `public/llms*.txt` for those exact tokens.
 
 **Correct:** Treat llms.txt as a first-class doc surface. Every Update Mode run includes the stale-tech-token grep across both `app/docs/**` and `public/llms*.txt`, and rewrites every hit so the description matches the *current* code (e.g., "Fluent UI v9" → "in-house design-system (headless + Tailwind)"). Do not let an llms.txt change "wait for the next pass" — by then the AI search results have already cached the wrong stack.
+
+---
+
+### 24. Documenting Counts Without Code Verification
+
+**Wrong:** "11 个 Activity 路由对应不同业务模块", "70+ services", "16+ API endpoints" — written from the previous version of the doc, never re-measured against the codebase. After a refactor the registry has 13 entries, the codebase has 73 services, the API has 17 endpoints; the doc still claims the old numbers. AI agents and human readers then give downstream consumers wrong totals.
+
+**How to detect:** During every generation AND every update, run `content-mining.md` Step 2B.4.1 quantitative verification. For each numeric claim, identify the source-of-truth file (registry / enum / directory / `grep` recipe) and count today's value. Build the Quantitative Claim Table and treat any drift as a U4 update.
+
+**Correct:** Treat numbers like API contracts — they have a source of truth. When you write "13 Activities" you must have just counted them. If a number fluctuates more than ±10%, use a `+` suffix (e.g., "70+ services") and re-measure each release; if a number is locked (e.g., "13 ActivityId defined in viewRegistry.ts §A.5.2"), tie it to a specific file path so future maintainers know where to re-count.
+
+**Watch for the directory-vs-registry trap:** when the doc says "N modules" the user-facing count is almost always the registry / enum count, not the on-disk directory count. A registry can have 13 entries grouped into 11 directories (3 share a `hidden/` dir). State the discrepancy explicitly rather than picking the smaller number.
+
+---
+
+### 25. SVG Diagrams With Placeholder / Lorem Mock Data
+
+**Wrong:** Generating an SVG diagram with content like `Item 1 / Item 2 / Item 3`, `Event A / Event B`, `User 1 / User 2`, `Step 1 / Step 2 / Step 3`, or generic timestamps `T1 / T2 / T3`. The diagram looks abstract — readers can't tell what the product actually does, and the visual fails to support the surrounding prose.
+
+**How to detect:** After drawing a diagram, scan its rendered text for: `Lorem`, `Foo`, `Bar`, `Item N`, `Event [A-Z]`, `User \d`, `Provider \d`, `Step \d` (without verb), `Engine A/B`, `T\d`. Any hit is a quality bug.
+
+**Correct:** Pull mock values from the project's actual material — Phase 2B.3 evidence collection (real capability names), Phase 2B.6 config inventory (real env vars), Phase 2B.7 verified code examples (real test data shapes). Examples:
+
+| Domain | Bad mock | Good mock |
+|---|---|---|
+| Audit log timeline | `Event A / Event B / Event C` | `AI_CALL` `EMAIL_SEND` `BASH_EXEC` `MCP_CALL` `FILE_EDIT` |
+| Engine names | `Engine A / Engine B` | `DirectEngine` / `ProxyEngine` (project's real names) |
+| Provider chips | `Provider 1, 2, 3` | `OpenAI · 火山 · 阿里云` (real providers from Phase 2B.6) |
+| Step labels | `Step 1, Step 2` | `01 Trial request → 02 Install client → 03 Connect server` |
+| Actor field | `user1 / user2` | `agent.assistant`, `agent.coder`, `github.search`, `user` |
+| API endpoint | `/api/x` | `/api/ai/execute`, `/api/audit/logs` |
+| Timestamp | `T1 / T2 / T3` | `14:02:11 / 14:03:47 / 14:05:09` (monotonic, realistic gaps) |
+
+Mock data in diagrams is **descriptive evidence**, not decoration. Treat it with the same rigor as the prose it supports.
+
+---
+
+### 26. SVG Diagrams With Clipped Labels
+
+**Wrong:** A radial / circular diagram (e.g., hub-and-spoke panorama) where the topmost or bottommost label gets cut off by the SVG `viewBox`. Common cause: `cy + (r + labelOffset) > viewBox.height - 8` puts the bottom label below the viewBox.
+
+**How to detect:** Open the rendered diagram at desktop viewport, screenshot the section, verify every label is fully inside the card. If your tooling permits `getBBox()`, compute each label's bounding box and assert `bbox.x ≥ 8 && bbox.y ≥ 8 && bbox.x + bbox.width ≤ viewBox.w - 8 && bbox.y + bbox.height ≤ viewBox.h - 8`.
+
+**Correct:** Apply the rules in `generation-rules.md` 4.9.6:
+
+1. Compute the **outermost label coordinate** (e.g., for a hub-and-spoke at angles `[-150,-90,-30,30,90,150]` with `r=130` and `labelOffset=60`, the topmost label is at `cy - (r + labelOffset)`).
+2. Verify the outermost label's full bounding box (label width × label height) stays inside `viewBox` by **at least 8px on every side**.
+3. If a label hangs off, fix in this preference order: (a) increase viewBox height/width, (b) shift `cx/cy` to recenter, (c) reduce `r`, (d) reduce label offset.
+
+Real-world example: panorama diagram with 6 branches, viewBox `720 × 360`, `cy=170`, `r=130`, `labelOffset=60` → top label at `y = -20` (clipped). Fix: viewBox `720 × 460`, `cy=220` → all labels inside.
 
 ---
 
