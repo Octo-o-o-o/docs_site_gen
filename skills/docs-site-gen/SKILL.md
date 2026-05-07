@@ -5,7 +5,7 @@ license: Apache-2.0
 compatibility: Works with any project type. Next.js recommended for projects with existing frontend. For projects without frontend, scaffolds a standalone docs site or generates static HTML. Node.js and pnpm/npm for validation.
 metadata:
   author: Octo-o-o-o
-  version: "2.5.1"
+  version: "2.5.2"
 ---
 
 # docs-site-gen — Documentation Site Generator
@@ -398,7 +398,7 @@ Generate pages following the resolved design conventions. Key areas covered:
 6. **Evidence-Based Content** — Write from verified evidence, match depth to tier, specificity over adjectives, prefer verified code examples
 7. **i18n Key Generation** — Adapt to detected i18n level (Multi/Single/None)
 8. **Navigation Updates** — Update homepage and footer docs links
-9. **Visual Diagrams (Server-Safe SVG)** — Inline SVG illustrations matched to project brand palette, with realistic mock data drawn from Phase 2B evidence. 5 archetypes (HorizontalStepFlow / LayeredArchitecture / DualPathDecision / HubAndSpokePanorama / EventTimeline). Centralize in `app/docs/_components/Diagrams.tsx`. ViewBox safety check for radial layouts. See `references/generation-rules.md` 4.9 + `references/templates.md` Diagram Templates.
+9. **Visual Diagrams (Server-Safe SVG)** — Inline SVG illustrations matched to project brand palette, with realistic mock data drawn from Phase 2B evidence (every node label / chip / actor must trace to a real codebase entity, not just look-real placeholders). 5 archetypes (HorizontalStepFlow / LayeredArchitecture / DualPathDecision / HubAndSpokePanorama / EventTimeline). Centralize in `app/docs/_components/Diagrams.tsx`. ViewBox safety check (especially for radial / hub-and-spoke layouts where top/bottom labels clip). See `references/generation-rules.md` 4.9 + `references/templates.md` Diagram Templates.
 
 Also refer to: `references/conventions.md` for code patterns and components, `references/templates.md` for layout/search/TOC/diagram templates.
 

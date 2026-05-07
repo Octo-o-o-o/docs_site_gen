@@ -247,6 +247,7 @@ These guards lift specific Phase 4 / Update-Mode rules into Phase 5 so they're e
 
 For every `<svg>` exported from `app/docs/_components/Diagrams.tsx` (or equivalent) and consumed on a page, verify:
 
+**Format checks:**
 - [ ] Has `role="img"` attribute
 - [ ] Has a unique, project-specific `aria-label` (NOT "diagram", NOT lorem)
 - [ ] Renders during SSR (test: `curl <docs-page> 2>/dev/null | grep -c '<svg' > 0`)
@@ -255,18 +256,55 @@ For every `<svg>` exported from `app/docs/_components/Diagrams.tsx` (or equivale
 - [ ] No labels clipped at viewBox edges (especially for radial / hub-and-spoke layouts at angles `±90°`). See `references/generation-rules.md` §4.9.6 for the verification recipe and `anti-patterns.md` #26 for the fix pattern.
 - [ ] Centralized in `_components/Diagrams.tsx` — not scattered as inline `<svg>` blocks across `content.tsx` files
 
-When this guard catches an issue, fix immediately (don't defer to "next pass" — diagrams without a11y or with placeholder mock data fail screen-reader and AI-summarization use cases).
+**Content authenticity checks** (this is critical — diagrams are documentation, not decoration):
+
+For every text label rendered inside the SVG — every node title, chip label, actor name, endpoint string, provider name, event type, header bar, footer caption — verify it traces to a Phase 2B.3 evidence entry. A diagram with format-clean mock that names fictional services is worse than no diagram, because the visual is more memorable than the surrounding prose.
+
+- [ ] Each engine / service / module name in the SVG appears in the project's actual source (grep the codebase to confirm)
+- [ ] Each provider / vendor name (e.g., `OpenAI · 火山 · 阿里云`) reflects the **current** Phase 2B.6 config inventory — not aspirational integrations
+- [ ] Each protocol / endpoint string (e.g., `/api/ai/execute`) is a route that currently exists in the project
+- [ ] Each event-type chip (e.g., `AI_CALL`, `EMAIL_SEND`) maps to a real audit-action enum or audit-category from `shared/types/audit.ts` (or equivalent)
+- [ ] Step labels in `HorizontalStepFlow` mirror the action verbs from the corresponding text content on the same page (`/docs/getting-started`)
+
+**When this guard catches an issue, fix immediately** — don't defer to "next pass". Diagrams without a11y, with placeholder mock data, or with fictional node labels fail three downstream consumers at once: screen-reader users, AI-summarization tools, and human readers building a mental model of the system.
 
 ### 5.5.2 Quantitative Claim Re-Verification
 
-Even if Phase 2B.4.1 already produced a Quantitative Claim Table, run it ONCE more against the **rendered** docs (not the planning doc):
+Even if Phase 2B.4.1 already produced a Quantitative Claim Table, run it ONCE more against the **rendered** docs (not the planning doc).
 
-1. Grep the generated content for numeric claims: `grep -oE '[0-9]+\+? (个|services|activities|handlers|API|endpoints|types?)' app/docs/**/content.tsx public/llms*.txt`
-2. For each match, identify the source-of-truth file (`src/app/viewRegistry.ts`, `electron/services/builtinAgents.ts`, etc.)
-3. Re-run the count using the recipes in `content-mining.md` Step 2B.4.1
-4. If the doc number disagrees with code by more than the `+` tolerance (≥10% off), update the doc
+**Step 1 — Extract every numeric claim** (use a generous unit list to catch project-specific terms):
 
-Why this matters: between CP2 approval and Phase 4 generation, you may have copy-pasted a count from CLAUDE.md without re-verifying. This guard is the final stop before publish. Real-world example caught by this check: docs claimed "11 个 Activity" while `viewRegistry.ts` had 13 ActivityIds.
+```bash
+grep -oE '[0-9]+\+?\s*(个|services|activities|handlers|API|endpoints|types?|primitives|Activity|ActivityId|Store|切片|审计类型|端点|组件|路由|插槽|插件|connectors?|providers?|agents?|tiers?|layers?)' \
+  app/docs/**/content.tsx public/llms*.txt
+```
+
+Adapt the unit list to the project's actual vocabulary — sample the rendered docs to see what counter words appear, then expand the regex.
+
+**Step 2 — For each match, identify the source-of-truth file** (`src/app/viewRegistry.ts`, `electron/services/builtinAgents.ts`, the IPC handler grep recipe, etc.). If no source-of-truth exists for a claim, the claim is fabricated and must be removed.
+
+**Step 3 — Re-run the count** using the recipes in `content-mining.md` Step 2B.4.1.
+
+**Step 4 — Apply the drift threshold (`anti-patterns.md` #28)** to each claim:
+
+| Drift (`actual / claimed - 1`) | Action |
+|---|---|
+| ≤ 10% | OK — no change |
+| 10–30% | Rewrite the number to fit (keep `+` suffix if originally used) |
+| > 30% | Lock to a precise count, embed the source-of-truth path in a comment so future maintainers know where to re-count |
+| > 50% | **HARD ERROR** — block CP3 until fixed; surface in CP3 output as a blocker |
+
+**Step 5 — Aggregate consistency check** — when ANY single-item count drifts (e.g., "fileService ~20 IPC handlers" found drift), immediately re-count the related aggregate (e.g., total IPC handlers across the project). Aggregates almost always drift in the same direction:
+
+| Single-item drift detected | Aggregate to re-verify |
+|---|---|
+| Per-service IPC handler count | Total IPC handlers (`grep -rE 'ipcMain\.handle\(' electron/`) |
+| Per-API-group endpoint count | Total API endpoints (`grep -rE '\.(get\|post\|put\|delete\|patch)\(' server/src/api/`) |
+| Per-Activity description | Total Activity count (registry / enum count) |
+| Per-store entry list | Total store count (`find src/stores -name '*.ts' -not -name '*.test.*' \| wc -l`) |
+| Per-feature service-tier listing | Total service count |
+
+Real-world examples this check has caught: docs claimed "11 个 Activity" → reality 13 (drift +18%, → rewrite). Docs claimed "321+ IPC handlers" → reality 567 (drift +75%, → HARD ERROR, locked to "550+"). Both came to light only because Step 5 aggregate consistency was triggered after a single-item drift was found.
 
 ### 5.5.3 Stale Tech Token Sweep
 
@@ -279,7 +317,11 @@ grep -rin 'TOKEN' app/docs/ public/llms*.txt
 
 Any hit must be rewritten to reflect the **current** stack before publishing. Pay special attention to `public/llms.txt` and `public/llms-full.txt` — they're the AI-readable mirror of the docs and aren't visible in normal QA, so they drift fastest.
 
-Real-world example: docs and llms.txt described the project as using "Fluent UI v9 ... Dockview 4.3+" months after both were ESLint-banned and removed from `package.json`.
+**Negation context is NOT a free pass** (see `anti-patterns.md` #27). Even if the surrounding sentence says "blocked", "removed", "已禁用", or "anti-regression", the token still leaks into AI-agent token-level scanners. Rewrite to use category words (e.g., "blocks legacy external UI frameworks" instead of "blocks Fluent UI / Dockview"). Inside source comments and CHANGELOG the explicit name is fine; in `llms*.txt` it's a leak.
+
+Real-world examples:
+- Docs claimed "Fluent UI v9 ... Dockview 4.3+" months after both were ESLint-banned and removed from `package.json` (case A — forgotten update, #23).
+- `llms-full.txt` said "ESLint no-restricted-imports 反退化门强制阻止 Fluent UI / Dockview 等历史依赖回归" — token-leak via meta-description (case B — #27). Rewrote to "强制阻止历史外部 UI 框架回归".
 
 ### 5.5.4 i18n-None Language Match
 

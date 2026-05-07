@@ -6,7 +6,7 @@ Common mistakes to avoid when using this skill, and solutions for frequent issue
 
 - **Anti-Patterns 1–10**: Visual & structural — hardcoded colors, skipping design detection, monolithic components, i18n key mismatches, lazy-loaded content, missing heading IDs, ignoring existing components, overriding customizations, dynamic imports for docs, generating without reading
 - **Anti-Patterns 11–15**: Content quality — CLAUDE.md-only paraphrasing, vague adjectives, skipping CP2 outline review, documenting vaporware, generic "how it works" steps
-- **Anti-Patterns 16–26**: Update & layout & diagrams — full rewrite instead of incremental update, skipping codebase rescan, skipping completeness verification, guessing configuration, synthesizing code examples, wrong navigation layout for content volume, mixing nav patterns, leaving stale tech tokens after a stack migration, **documenting counts without code verification** (#24), **SVG diagrams with placeholder/lorem mock data** (#25), **SVG diagrams with clipped labels at the viewBox edge** (#26)
+- **Anti-Patterns 16–28**: Update & layout & diagrams & numeric claims — full rewrite instead of incremental update, skipping codebase rescan, skipping completeness verification, guessing configuration, synthesizing code examples, wrong navigation layout for content volume, mixing nav patterns, leaving stale tech tokens after a stack migration, documenting counts without code verification (#24), SVG diagrams with placeholder/lorem mock data (#25), SVG diagrams with clipped labels at the viewBox edge (#26), **embedding retired tokens in anti-regression meta-descriptions (#27)** — yes, even when the surrounding sentence says "blocked / removed", **`+` suffix used as a forever-excuse against drift (#28)** — drift > 30% means rewrite, drift > 50% means hard error
 - **Troubleshooting**: TypeScript errors, missing i18n keys, broken imports, JSON-LD parse failures
 - **Recovery Steps**: What to do when generation halts partway
 
@@ -380,6 +380,48 @@ Mock data in diagrams is **descriptive evidence**, not decoration. Treat it with
 3. If a label hangs off, fix in this preference order: (a) increase viewBox height/width, (b) shift `cx/cy` to recenter, (c) reduce `r`, (d) reduce label offset.
 
 Real-world example: panorama diagram with 6 branches, viewBox `720 × 360`, `cy=170`, `r=130`, `labelOffset=60` → top label at `y = -20` (clipped). Fix: viewBox `720 × 460`, `cy=220` → all labels inside.
+
+---
+
+### 27. Embedding Retired Tokens in Anti-Regression Meta-Descriptions
+
+**Wrong:** Writing about a CI gate / lint rule / migration history in a way that *names the retired tokens themselves* — for example, in `public/llms-full.txt`:
+
+> "ESLint no-restricted-imports 反退化门强制阻止 Fluent UI / Dockview 等历史依赖回归。"
+
+The author meant: "these libraries are blocked." But `llms.txt` / `llms-full.txt` are read by AI agents (Perplexity, Claude, GPT) at the **token** level, not the sentence level. Token-level scanners pick up `Fluent UI` and `Dockview` and conclude the project uses them — exactly the opposite of what was intended.
+
+This is distinct from #23 (forgotten tokens that simply weren't updated). Here the token leak is intentional but the framing leaks the token anyway.
+
+**How to detect:** During Phase 5.5.3 (or Update-Mode U1 stale-token grep), don't treat negation context (`不再用`, `已移除`, `禁用`, `blocked`, `removed`, `deprecated`, `legacy`) as a free pass. Any occurrence of a retired token in `public/llms*.txt` is a leak, full stop, regardless of surrounding sentence.
+
+**Correct:** Replace specific token names with category words, OR move the meta-description out of `llms.txt`:
+
+| Leaky | Token-safe |
+|---|---|
+| "blocks Fluent UI / Dockview from regression" | "blocks legacy external UI frameworks from regression" |
+| "no longer uses Mongoose ORM" | "uses an in-house data layer; legacy ORM removed" |
+| "old Express middleware deprecated in v3" | "v3 retired the previous Node middleware stack" |
+
+Apply only to AI-readable surfaces (`public/llms*.txt`). Inside source comments / commit messages / CHANGELOG, naming the retired token is fine and useful.
+
+---
+
+### 28. `+` Suffix Used as a Forever-Excuse Against Drift
+
+**Wrong:** Documenting "70+ services", "321+ IPC handlers", "10+ audit types" and treating `+` as license to skip re-counting forever. The `+` softens a number — it does NOT make it correct at any scale.
+
+Real-world example: docs claimed "321+ IPC handlers" — actual count was 567 (drift = +75%). The `+` was technically truthful (567 > 321) but readers interpret `+` as "approximately N" or "slightly more than N", not "75% more than N".
+
+**Threshold rule:**
+- **Drift ≤ 10%**: `N+` is fine, no action required
+- **Drift 10–30%**: rewrite to a tighter number with the same `+` style (e.g., `321+` → `550+` if reality is 567)
+- **Drift > 30%**: lock to a precise count tied to a source-of-truth file path so future readers know where to re-verify (e.g., `567 IPC handlers (count: \`grep -rE "ipcMain\\.handle\\(" electron/\`)`)
+- **Drift > 50%**: hard error during Phase 5.5.2 — block CP3 until fixed
+
+**How to detect:** Phase 5.5.2 grep extracts every `\d+\+` claim, re-runs the count from the source-of-truth recipe, computes drift percentage, and applies the threshold rule above.
+
+**Correct:** Re-count every `+` claim every release. The `+` is a tolerance, not a forever-shield.
 
 ---
 
