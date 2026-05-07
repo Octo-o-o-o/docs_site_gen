@@ -4,6 +4,17 @@ Detailed rules for Phase 4 page generation. Read this file before starting Phase
 
 Generate pages following the resolved design conventions. Apply these rules:
 
+## Contents
+
+- **4.1 File Structure** — Mode A (one-page), Mode B (header nav), Mode C (sidebar nav); Server/Client split rules
+- **4.2 Design System Application** — How Level A/B/C maps to component styling decisions
+- **4.3 Code Conventions** — Match existing imports, CSS approach, component patterns
+- **4.4 Reusable Components** — Reuse existing → import from existing docs → create new last
+- **4.5 AI-Friendly Documentation (REQUIRED)** — SSR, heading IDs, llms.txt, JSON-LD, hreflang, AI crawlers, SEO toggle, static-export awareness
+- **4.6 Evidence-Based Content Generation** — Tier-driven word counts, specificity over adjectives, verified code examples
+- **4.7 i18n Key Naming Convention** — Match project conventions; one rule per i18n level
+- **4.8 Navigation Updates** — Update homepage links + footer + docs internal nav
+
 ## 4.1 File Structure
 
 The file structure depends on the **navigation layout** chosen in Step 3.3.1. All layouts share the Server/Client split pattern from `references/conventions.md`: `page.tsx` exports `Metadata` (Server Component), `content.tsx` has `"use client"` with interactive content.
@@ -279,6 +290,19 @@ The SEO toggle controls whether docs pages are actively made discoverable by Goo
 
 3. **Page metadata**: Use enhanced metadata as defined in section 4.5D above (includes rich snippet robots and hreflang when applicable).
 
+**Static export awareness** (when project uses `output: 'export'` in `next.config.*`):
+
+If the project has Next.js static export enabled, all `app/sitemap.ts`, `app/robots.ts`, JSON-LD blocks and `Metadata` exports still work — they are pre-rendered to static files at build time (`out/sitemap.xml`, `out/robots.txt`). However:
+
+- **`app/sitemap.ts` and `app/robots.ts` MUST opt into static rendering** with `export const dynamic = 'force-static'` at the top of the file. Without it, `next dev` returns a 500 error and the build fails with: `"export const dynamic = \"force-static\" / export const revalidate not configured on route \"/robots.txt\" with \"output: export\""`. Apply the same to `app/manifest.ts` if generated.
+- Do NOT use `revalidate`, dynamic-fetch behaviour, or `headers()`/`cookies()` server functions (unsupported in export mode)
+- Dynamic route segments require `generateStaticParams()` returning all paths at build time
+- Skip route handlers (`route.ts`) and middleware — they are not emitted in export mode
+- `<Image>` from `next/image` requires `images.unoptimized: true` (already typical for export builds)
+- After build, verify the docs pages exist as `out/docs/index.html`, `out/docs/<sub>/index.html`, etc. — if `trailingSlash: true` is set in `next.config`, sub-routes appear as directories with `index.html`
+
+If `output: 'export'` is NOT set, no special handling needed.
+
 **If SEO = No**:
 
 1. **Skip sitemap generation** — Do NOT add docs pages to `app/sitemap.ts`.
@@ -394,6 +418,60 @@ d. **`HowTo`** — For Getting Started / tutorial pages. Use proper `HowToStep` 
 ```
 Extract steps from the actual Getting Started content. Each step's `text` must match the rendered content.
 
+**JSON-LD helper component pattern (recommended)**:
+
+When generating 3+ docs pages, do NOT inline raw `<script type="application/ld+json">` blocks in every `page.tsx` — that's repetitive, hard to keep in sync, and error-prone for the BASE_URL constant. Instead create a small server-safe helper file under `app/docs/_components/JsonLd.tsx` (or equivalent path) that exports one component per schema type:
+
+```tsx
+// app/docs/_components/JsonLd.tsx — server-safe, no "use client"
+const BASE_URL = 'https://your-domain.com'
+
+export function BreadcrumbsJsonLd({ items }: { items: { name: string; href: string }[] }) {
+  const data = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, idx) => ({
+      '@type': 'ListItem', position: idx + 1, name: item.name, item: `${BASE_URL}${item.href}`,
+    })),
+  }
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
+}
+
+export function TechArticleJsonLd({ headline, description, path }: { headline: string; description: string; path: string }) {
+  const data = {
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    headline, description,
+    url: `${BASE_URL}${path}`,
+    inLanguage: 'zh-CN', // adapt to project's primary locale; for i18n-Multi, omit and let metadata.alternates.languages cover it
+    isPartOf: { '@type': 'WebSite', name: 'ProjectName', url: BASE_URL },
+    publisher: { '@type': 'Organization', name: 'OrgName', url: BASE_URL },
+  }
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
+}
+// Add SoftwareApplicationJsonLd / FAQPageJsonLd / HowToJsonLd as needed.
+```
+
+Each `page.tsx` then composes the schemas it needs:
+
+```tsx
+export default function ArchitecturePage() {
+  return (
+    <>
+      <BreadcrumbsJsonLd items={[
+        { name: '首页', href: '/' },
+        { name: '技术文档', href: '/docs' },
+        { name: '系统架构', href: '/docs/architecture' },
+      ]} />
+      <TechArticleJsonLd headline="..." description="..." path="/docs/architecture" />
+      <ArchitectureContent />
+    </>
+  )
+}
+```
+
+This keeps the BASE_URL in one place, makes `page.tsx` files declarative, and lets you add new schemas (e.g., `FAQPageJsonLd`) by extending the helper rather than editing every page.
+
 ## 4.6 Evidence-Based Content Generation
 
 **This is the core content generation step.** Use the approved Content Outline from CP2 as a strict blueprint. Do NOT deviate from it without reason.
@@ -457,7 +535,7 @@ Before finalizing i18n content, verify each item:
 Adapt to the i18n level detected in Phase 2A.3:
 - **i18n-Multi**: Generate keys in ALL language files simultaneously. See `references/conventions.md` for i18n examples.
 - **i18n-Single**: Generate keys in the single language file only.
-- **i18n-None**: Use inline text directly in JSX. Skip all i18n key generation.
+- **i18n-None**: Use inline text directly in JSX. Skip all i18n key generation. **Match the project's content language** — if existing pages use Chinese (or any non-English language) in their inline strings, all generated section titles, body copy, button labels, callouts, and JSX text MUST be in that same language. Do not silently fall back to English. Detect the language by sampling 2-3 existing page files for their dominant text language.
 
 ## 4.8 Navigation Updates
 

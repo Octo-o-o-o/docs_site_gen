@@ -2,6 +2,13 @@
 
 Large, copy-paste-ready code templates for docs generation. Referenced by `conventions.md` and SKILL.md at specific steps — only read this file when generating multi-page docs or when a specific template is needed.
 
+## Contents
+
+- **Docs Layout Templates** — Header Nav (Mode B) and Sidebar Nav (Mode C) full layout files
+- **Search Component (CMD+K)** — SearchDialog + SearchButton with keyboard handling
+- **On-Page Table of Contents (Right-Side TOC)** — Sticky TOC with active-section highlighting via IntersectionObserver
+- **Previous/Next Page Navigation** — Cross-page nav links derived from sidebar/header order
+
 ## Docs Layout Templates
 
 Two layout templates for multi-page docs, selected based on Step 3.3.1 navigation layout choice. For one-page mode (Layout Mode A), no `layout.tsx` is needed.

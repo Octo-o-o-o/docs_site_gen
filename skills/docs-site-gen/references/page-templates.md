@@ -2,6 +2,18 @@
 
 Skeleton outlines for common documentation page types. Use these as starting points, then fill in project-specific content from codebase analysis.
 
+## Contents
+
+- **1. Overview / Landing Page** (`/docs`) — Hero, what-is, core concepts, features, how-it-works, tech stack
+- **2. Features Page** (`/docs/features`) — Tiered feature inventory with evidence
+- **3. Architecture Page** (`/docs/architecture`) — Layer diagram, component table, data flow
+- **4. Getting Started Page** (`/docs/getting-started`) — Prerequisites, install, first run, verification
+- **5. API Reference Page** (`/docs/api`) — Endpoint groups, auth, response shapes, error codes
+- **6. Configuration Reference Page** (`/docs/configuration`) — Env vars, defaults, sample files
+- **Style Preset Influence on Templates** — Which presets favor which page rhythms
+- **Content Generation Guidelines** — Word counts, headings, evidence rules per template
+- **General Tips for All Pages** — Cross-page consistency, callout usage, image strategy
+
 ## 1. Overview / Landing Page (`/docs`)
 
 The docs entry point. Should give visitors a complete understanding of the project in one page.

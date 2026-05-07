@@ -2,6 +2,16 @@
 
 When a project has **no web frontend** (Frontend Level F3 from Phase 1 Step 1.0), the skill operates in standalone mode. This reference covers frontend detection, output strategy, template selection, color scheme generation, and demo HTML preview.
 
+## Contents
+
+- **When This Mode Applies** — Project types that trigger F3 standalone mode
+- **Phase 1 Behavior (F3)** — How design system detection short-circuits when there's no frontend
+- **Design System Detection Results** — F3 summary template
+- **Output Strategy** — Standalone Next.js scaffold vs static HTML vs adapt-to-user-framework
+- **Phase 3 Step 3.1: Template & Color Selection (F3)** — 4 layout templates + tailored color schemes
+- **Demo HTML Generation (Optional)** — Preview HTML for visual selection before commitment
+- **Phase 4 Adjustments for F3** — Bootstrap files, no i18n by default, scaffold expectations
+
 ## When This Mode Applies
 
 - Backend-only projects (API servers, microservices)

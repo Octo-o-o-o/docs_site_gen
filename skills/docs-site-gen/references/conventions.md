@@ -4,6 +4,21 @@ This document captures code patterns and style conventions for generating docume
 
 **IMPORTANT**: Always run design system detection first (see SKILL.md Phase 1). If the project has its own design tokens, CSS variables, or component library, those take priority over everything in this file.
 
+## Contents
+
+- **File Header Pattern** — `"use client"`, imports, i18n hook
+- **Design System Detection Checklist** — What to extract from existing CSS / pages
+- **CSS Variable System (Default)** — Color/spacing/typography tokens for greenfield projects
+- **Layout Classes (Default)** — `.section-container`, `.card-shell`, button variants
+- **Required Icon Definitions** — Inline-SVG icons used in default templates
+- **Reusable Section Components** — Hero, FeatureGrid, StepList, Callout, FAQ, etc.
+- **Page Structure Template (Single-Page Docs)** — Skeleton for one-page Mode A
+- **i18n Key Structure** — Naming conventions and bilingual examples
+- **Responsive Design Patterns** — Breakpoints, grid behavior, mobile-first defaults
+- **Docs Layout & Search Templates** — Pointer to `templates.md`
+- **AI-Friendly Patterns** — Heading IDs, JSON-LD, llms.txt examples
+- **i18n Examples** — Docs / API / Overview / Self-Host Guide key trees
+
 ## File Header Pattern
 
 ```tsx

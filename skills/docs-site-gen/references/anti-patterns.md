@@ -2,6 +2,14 @@
 
 Common mistakes to avoid when using this skill, and solutions for frequent issues.
 
+## Contents
+
+- **Anti-Patterns 1–10**: Visual & structural — hardcoded colors, skipping design detection, monolithic components, i18n key mismatches, lazy-loaded content, missing heading IDs, ignoring existing components, overriding customizations, dynamic imports for docs, generating without reading
+- **Anti-Patterns 11–15**: Content quality — CLAUDE.md-only paraphrasing, vague adjectives, skipping CP2 outline review, documenting vaporware, generic "how it works" steps
+- **Anti-Patterns 16–23**: Update & layout — full rewrite instead of incremental update, skipping codebase rescan, skipping completeness verification, guessing configuration, synthesizing code examples, wrong navigation layout for content volume, mixing nav patterns, leaving stale tech tokens (e.g., retired framework names) in docs / llms.txt after a stack migration
+- **Troubleshooting**: TypeScript errors, missing i18n keys, broken imports, JSON-LD parse failures
+- **Recovery Steps**: What to do when generation halts partway
+
 ## Anti-Patterns
 
 ### 1. Hardcoding Colors
@@ -312,6 +320,16 @@ Always present the recommendation to the user and let them choose. If the user i
 **Wrong:** Using a sidebar layout but also adding horizontal nav links in the header for the same pages, or adding a right-side TOC to every page in sidebar mode regardless of section count.
 
 **Correct:** Pick ONE navigation pattern and commit to it. The layout modes are mutually exclusive. Right-side TOC is only added to pages with 5+ sections (except in one-page mode where it's always present).
+
+---
+
+### 23. Leaving Stale Tech Tokens After a Stack Migration
+
+**Wrong:** The project has migrated away from a library or framework (e.g., the codebase explicitly retired Fluent UI, Dockview, or some legacy router), but the docs and especially `public/llms.txt` / `public/llms-full.txt` still list it. This happens because llms.txt is the AI-readable mirror of the docs and isn't visible during normal QA, so it drifts faster than on-page content. AI agents reading the public llms.txt then describe the project with a stack that no longer matches reality.
+
+**How to detect:** During Update Mode U1, read CLAUDE.md / ESLint configs / CI gates / saved memory for "removed", "已移除", "deprecated", "anti-regression: blocked" markers. Then `grep` the docs folder AND `public/llms*.txt` for those exact tokens.
+
+**Correct:** Treat llms.txt as a first-class doc surface. Every Update Mode run includes the stale-tech-token grep across both `app/docs/**` and `public/llms*.txt`, and rewrites every hit so the description matches the *current* code (e.g., "Fluent UI v9" → "in-house design-system (headless + Tailwind)"). Do not let an llms.txt change "wait for the next pass" — by then the AI search results have already cached the wrong stack.
 
 ---
 

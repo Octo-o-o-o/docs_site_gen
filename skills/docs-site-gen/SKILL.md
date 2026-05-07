@@ -5,7 +5,7 @@ license: Apache-2.0
 compatibility: Works with any project type. Next.js recommended for projects with existing frontend. For projects without frontend, scaffolds a standalone docs site or generates static HTML. Node.js and pnpm/npm for validation.
 metadata:
   author: Octo-o-o-o
-  version: "2.3.0"
+  version: "2.4.1"
 ---
 
 # docs-site-gen — Documentation Site Generator
@@ -194,44 +194,9 @@ Gather structural information about the project:
 
 6. **Discover local documentation files** (Local MD Discovery):
 
-   Scan the project for existing markdown documentation that may contain content worth inlining into the docs site. This content should be **embedded directly** into generated pages — NOT referenced via links.
+   Scan the project for existing markdown docs (e.g., `docs/*.md`, `GUIDE.md`, `ARCHITECTURE.md`) that may contain content worth **inlining** into the generated pages. For each file: assess relevance (describes THIS project?), freshness (spot-check 2-3 specific references against the codebase), and classification (Current / Partially Outdated / Outdated). Current content is inlined verbatim into matching page sections in Phase 4 — do NOT replace with "see docs/xyz.md" links. Add a "Local Documentation" entry to the Content Discovery Report.
 
-   **Scan patterns**:
-   ```
-   docs/*.md, doc/*.md, documentation/*.md, wiki/*.md, guides/*.md
-   GUIDE.md, TUTORIAL.md, ARCHITECTURE.md, DESIGN.md, CONTRIBUTING.md
-   *.md in project root (excluding README.md, CLAUDE.md, CHANGELOG.md, LICENSE.md)
-   ```
-
-   **For each discovered MD file, evaluate**:
-
-   a. **Relevance**: Does the content describe THIS project? Check for project name mentions, matching file paths, matching technology references. If the file describes a different project → skip.
-
-   b. **Freshness**: Spot-check 2-3 specific references per file (file paths, API endpoints, commands, config keys) by grepping/globbing the codebase. If >50% of references are stale → mark as outdated.
-
-   c. **Classification**:
-
-   | Status | Criteria | Action |
-   |--------|----------|--------|
-   | **Current** | References match codebase, describes existing features | **Inline into docs**: preserve original text, map to page sections in Phase 3.4 |
-   | **Partially Outdated** | Some sections current, others stale | Extract current sections only. Note outdated parts in report. |
-   | **Outdated / Wrong** | Most references stale, or describes a different project | **Do NOT use**. Note as skipped in report. |
-
-   **Inline rules** (applied in Phase 4 when generating pages):
-   - Preserve the original author's text as much as possible — do not rewrite unless required for web formatting
-   - Convert MD headings → SectionHeading components; MD code blocks → CodeBlock components; MD tables → styled tables
-   - Do NOT create "see docs/xyz.md" links — the content must BE in the docs page directly
-   - Attribute source in an HTML comment: `<!-- Content sourced from docs/architecture.md -->`
-
-   **Output**: Add a "Local Documentation" section to the Phase 2 Content Discovery Report:
-   ```
-   ### Local Documentation ([N] files discovered, [M] current)
-   | File | Status | Usable Sections | Target Page |
-   |------|--------|----------------|-------------|
-   | docs/architecture.md | Current | All (4 sections) | /docs/architecture |
-   | docs/api-guide.md | Partial | Sections 1-3 | /docs/api |
-   | docs/old-setup.md | Outdated | — (skipped) | — |
-   ```
+   **See `references/content-mining.md` → "Local Documentation Discovery"** for the full scan pattern, classification criteria, inline rules, and report format.
 
 #### Phase 2B: Deep Content Mining
 

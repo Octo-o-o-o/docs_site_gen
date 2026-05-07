@@ -4,6 +4,14 @@ Detailed checklist for Phase 5 validation. Read this file before starting Phase 
 
 After generation, run ALL checks in order. Do not skip any.
 
+## Contents
+
+- **5.0 Implementation Completeness Verification** — Two-pass self-audit (Pass 1 plan-vs-output, Pass 2 structural integrity)
+- **5.1 Technical Validation** — TypeScript check, lint, i18n key consistency
+- **5.2 AI-Friendly & SEO Validation** — Heading IDs, llms.txt, Server/Client split, JSON-LD, sitemap/robots, hreflang
+- **5.3 Content Quality Audit** — Re-verify claims, check specificity, bilingual quality
+- **5.4 Visual Review Prompt** — Tell user how to launch dev server and preview
+
 ## 5.0 Implementation Completeness Verification
 
 **This step runs FIRST in Phase 5 — before any other validation.** Its purpose is to catch structural omissions (missing files, missing sections, missing navigation) that technical checks like `tsc` won't detect. This is split into two passes for thoroughness.

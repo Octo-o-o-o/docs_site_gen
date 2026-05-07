@@ -2,6 +2,18 @@
 
 **CRITICAL**: This is where documentation content quality is determined. Do NOT skip or abbreviate these steps. The goal is to build a **verified feature inventory** — not by summarizing CLAUDE.md, but by reading actual source code.
 
+## Contents
+
+- **Step 2B.1: Feature Inventory Scan** — Use Agent (Explore) to scan routers, models, services, CLI commands, frontend
+- **Step 2B.2: Feature Depth Classification** — Tier 1 (hero), Tier 2 (core), Tier 3 (supporting)
+- **Step 2B.3: Content Evidence Collection** — Read source code; collect verified capabilities, workflows, mechanisms
+- **Step 2B.4: Claim Verification** — Cross-check CLAUDE.md/README claims against code
+- **Step 2B.5: Project Identity Extraction** — Pitch, problem, differentiator, audience, maturity
+- **Step 2B.6: Configuration & Environment Scanning** — env vars, config schemas, build config
+- **Step 2B.7: Verified Code Examples** — Extract real snippets from tests and examples/
+- **Local Documentation Discovery** — How to detect, evaluate, and inline existing markdown docs into pages
+- **Phase 2 Output: Content Discovery Report** — Aggregated, presentable summary
+
 ## Step 2B.1: Feature Inventory Scan
 
 Use the **Agent tool** (subagent_type: `Explore`) to perform a thorough codebase scan. Choose the scan profile that matches the project type:
@@ -297,6 +309,50 @@ Scan test files and example directories for real, working code snippets that can
 ```
 
 **Skip this step if**: The project has no test files and no `examples/` directory.
+
+## Local Documentation Discovery
+
+Scan the project for existing markdown documentation that may contain content worth inlining into the generated docs site. This content should be **embedded directly** into generated pages — NOT referenced via links.
+
+**Scan patterns**:
+
+```
+docs/*.md, doc/*.md, documentation/*.md, wiki/*.md, guides/*.md
+GUIDE.md, TUTORIAL.md, ARCHITECTURE.md, DESIGN.md, CONTRIBUTING.md
+*.md in project root (excluding README.md, CLAUDE.md, CHANGELOG.md, LICENSE.md)
+```
+
+**For each discovered MD file, evaluate**:
+
+a. **Relevance**: Does the content describe THIS project? Check for project name mentions, matching file paths, matching technology references. If the file describes a different project → skip.
+
+b. **Freshness**: Spot-check 2-3 specific references per file (file paths, API endpoints, commands, config keys) by grepping/globbing the codebase. If >50% of references are stale → mark as outdated.
+
+c. **Classification**:
+
+| Status | Criteria | Action |
+|--------|----------|--------|
+| **Current** | References match codebase, describes existing features | **Inline into docs**: preserve original text, map to page sections in Phase 3.4 |
+| **Partially Outdated** | Some sections current, others stale | Extract current sections only. Note outdated parts in report. |
+| **Outdated / Wrong** | Most references stale, or describes a different project | **Do NOT use**. Note as skipped in report. |
+
+**Inline rules** (applied in Phase 4 when generating pages):
+
+- Preserve the original author's text as much as possible — do not rewrite unless required for web formatting
+- Convert MD headings → SectionHeading components; MD code blocks → CodeBlock components; MD tables → styled tables
+- Do NOT create "see docs/xyz.md" links — the content must BE in the docs page directly
+- Attribute source in an HTML comment: `<!-- Content sourced from docs/architecture.md -->`
+
+**Output**: Add a "Local Documentation" section to the Phase 2 Content Discovery Report:
+
+```
+### Local Documentation ([N] files discovered, [M] current)
+| File | Status | Usable Sections | Target Page |
+|------|--------|----------------|-------------|
+| docs/architecture.md | Current | All (4 sections) | /docs/architecture |
+| docs/api-guide.md | Partial | Sections 1-3 | /docs/api |
+| docs/old-setup.md | Outdated | — (skipped) | — |
+```
 
 ## Phase 2 Output: Content Discovery Report
 

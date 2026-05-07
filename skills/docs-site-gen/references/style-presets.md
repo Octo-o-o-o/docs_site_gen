@@ -2,6 +2,20 @@
 
 Curated style presets inspired by iconic documentation websites. Each preset defines visual direction, layout structure, and content organization patterns.
 
+## Contents
+
+- **How Style Presets Work** — Priority rules; what presets do and don't control
+- **Preset 1: Stripe Premium** — Vibrant gradient, dense info, premium feel
+- **Preset 2: Vercel Monochrome** — Black/white minimalism with orange accent
+- **Preset 3: Tailwind Utility** — Saturated palette, utility-class-driven
+- **Preset 4: GitHub System** — Familiar, restrained, system-like
+- **Preset 5: Supabase Bold** — Bright green, technical confidence
+- **Preset 6: Linear Minimal** — Soft shadows, narrow column, calm typography
+- **Preset 7: Anthropic Warm** — Earth tones, generous spacing, story-first
+- **Preset 8: Notion Friendly** — Soft, rounded, approachable
+- **Quick Selection Guide** — Recommendation matrix by audience and tone
+- **Combining Presets** — Mixing structure from one with palette from another
+
 ## How Style Presets Work
 
 ### Priority Rules (Highest to Lowest)
