@@ -12,7 +12,7 @@ Skeleton outlines for common documentation page types. Use these as starting poi
 - **6. Configuration Reference Page** (`/docs/configuration`) — Env vars, defaults, sample files
 - **Style Preset Influence on Templates** — Which presets favor which page rhythms
 - **Content Generation Guidelines** — Word counts, headings, evidence rules per template
-- **General Tips for All Pages** — Cross-page consistency, callout usage, image strategy
+- **General Tips for All Pages** — Cross-page consistency, callout usage, image strategy, **recommended diagram archetype per page type** (cross-ref to `templates.md` Diagram Templates + `generation-rules.md` §4.9)
 
 ## 1. Overview / Landing Page (`/docs`)
 
@@ -30,7 +30,7 @@ The docs entry point. Should give visitors a complete understanding of the proje
    - Problem statement (what pain does it solve?)
    - Solution overview (how does it solve it?)
    - Key differentiator (why this over alternatives?)
-   - Optional: architecture diagram (ASCII or visual)
+   - Optional: high-level system diagram. Default to a server-safe SVG archetype from `templates.md` → "Diagram Templates" (e.g., `LayeredArchitecture` for layered systems, `DualPathDecision` for branching). See `generation-rules.md` §4.9 for when to draw and how to match the project's brand palette. ASCII art in a CodeBlock is acceptable as a fallback only when SVG isn't viable.
 
 3. Core Concepts
    - 3-5 concept cards explaining fundamental ideas
@@ -127,7 +127,7 @@ Features are sourced from the **Phase 2B Feature Inventory** (see SKILL.md). The
    - Badge: "ARCHITECTURE" / "技术架构"
 
 2. System Overview
-   - High-level diagram (ASCII art in code block)
+   - High-level diagram — preferred archetype: `LayeredArchitecture` (when layers exist) or `DualPathDecision` (when there's a routing/branching point) from `templates.md`. ASCII art in a CodeBlock is acceptable as fallback only.
    - Component descriptions
 
 3. Tech Stack Details
@@ -137,7 +137,7 @@ Features are sourced from the **Phase 2B Feature Inventory** (see SKILL.md). The
 4. Protocol Layer (if applicable)
    - MCP, A2A, or other protocols
    - How they integrate
-   - Data flow diagrams
+   - Data flow diagrams — for time-ordered events, prefer `EventTimeline`; for hub-of-protocols, prefer `HubAndSpokePanorama`
 
 5. Security Model
    - Authentication & authorization
@@ -290,7 +290,7 @@ Content quality rules (evidence-based writing, specificity, tier-based depth) ar
 
 **Features page**: One section per Tier 1 feature with 150-250 word descriptions + bullet list of verified capabilities + API endpoint examples. Tier 2 features go in a card grid (50-100 words each).
 
-**Architecture page**: System diagram (ASCII art in CodeBlock), component responsibilities mapped to actual services, data flow tracing a real request (router → service → model → response), protocol explanations from actual code.
+**Architecture page**: System diagram — prefer a server-safe SVG archetype (`LayeredArchitecture` / `DualPathDecision` from `templates.md`) matched to the project's brand palette over ASCII art. Component responsibilities mapped to actual services, data flow tracing a real request (router → service → model → response), protocol explanations from actual code. See `generation-rules.md` §4.9 for diagram rules and `anti-patterns.md` #25–26 for mock-data and viewBox pitfalls.
 
 **Configuration page** (`/docs/configuration`): Every variable description must come from reading the consumption site (Phase 2B.6), not guessing from the variable name. Quick Setup section shows only required variables. Security-sensitive variables use `type="warning"` Callout with placeholder values.
 
@@ -302,3 +302,16 @@ Content quality rules (evidence-based writing, specificity, tier-based depth) ar
 2. **Consistency across pages**: If one page uses `mb-12` between sections, all pages should.
 3. **Link between pages**: Use `Link` from `next/link` for internal links.
 4. **Structural components**: For multi-page docs, include Breadcrumbs (top of sub-pages), PrevNextNav (bottom of each page), and TableOfContents (right-side, for pages with 5+ sections). Use Callout for important notes/warnings. See `references/generation-rules.md` section 4.4 for conditions and `references/conventions.md` / `references/templates.md` for component code.
+5. **Recommended diagram per page type** — pick one archetype from `templates.md` Diagram Templates and place it AFTER the section's intro paragraph. Cap 1-2 diagrams per page. Detailed when/how rules in `generation-rules.md` §4.9.
+
+   | Page type | Default archetype | Notes |
+   |---|---|---|
+   | Overview / Landing | None (rely on homepage vignettes) — or 1 system overview if no homepage illustrations exist | Avoid duplicating any homepage SVG |
+   | Features | None | The card grid IS the visualization |
+   | Architecture | `LayeredArchitecture` + optional `DualPathDecision` if branching | Don't ASCII-art it. SVG with brand colors. |
+   | Getting Started | `HorizontalStepFlow` | One per page, replaces "1, 2, 3" prose-only sections |
+   | API Reference | None (endpoint table is visual) — or one request/response shape diagram | Tables already carry the structure |
+   | Configuration | None | Tables already carry the structure |
+   | FAQ | None | Q&A list is the visual |
+   | Security | `LayeredArchitecture` (encryption layers) + `EventTimeline` (audit trail) | Two diagrams OK — they cover orthogonal concerns |
+   | Integrations | `HubAndSpokePanorama` | Always at least 4 partners → panorama beats list |

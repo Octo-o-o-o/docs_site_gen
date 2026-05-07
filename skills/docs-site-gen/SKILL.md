@@ -5,7 +5,7 @@ license: Apache-2.0
 compatibility: Works with any project type. Next.js recommended for projects with existing frontend. For projects without frontend, scaffolds a standalone docs site or generates static HTML. Node.js and pnpm/npm for validation.
 metadata:
   author: Octo-o-o-o
-  version: "2.5.0"
+  version: "2.5.1"
 ---
 
 # docs-site-gen — Documentation Site Generator
@@ -469,13 +469,13 @@ See `references/anti-patterns.md` for the full list of common mistakes with exam
 
 ## References
 
-- [content-mining.md](references/content-mining.md) — Phase 2B deep content mining: feature inventory scan, evidence collection, claim verification, configuration scanning, code examples
-- [generation-rules.md](references/generation-rules.md) — Phase 4 page generation: file structure, design application, AI-friendly requirements, content writing rules, quality checklist
-- [validation-rules.md](references/validation-rules.md) — Phase 5 validation: completeness audit, technical checks, content quality audit
-- [update-mode.md](references/update-mode.md) — Incremental Update Mode: existing docs audit, delta detection, targeted update workflow
+- [content-mining.md](references/content-mining.md) — Phase 2B deep content mining: feature inventory, evidence collection, claim verification (incl. quantitative claims), local MD discovery, project identity, configuration scanning, code examples
+- [generation-rules.md](references/generation-rules.md) — Phase 4 page generation: file structure, design application, AI-friendly + SEO + JSON-LD, evidence-based content, i18n keys, navigation updates, **Visual Diagrams (4.9)**
+- [validation-rules.md](references/validation-rules.md) — Phase 5 validation: two-pass completeness audit, technical checks, AI-friendly checks, content quality, **cross-cutting guards (diagram a11y, quantitative claim drift, stale tech tokens)**
+- [update-mode.md](references/update-mode.md) — Incremental Update Mode: U1 existing docs audit (incl. JSON-LD coverage, stale-token grep, quantitative claim drift), U2 codebase delta, U3 update plan (CP-U), U4 targeted edits (incl. animation wrapper preservation), U5 validation
 - [conventions.md](references/conventions.md) — Code conventions, icon definitions, component patterns, i18n examples, AI-friendly patterns
-- [templates.md](references/templates.md) — Large code templates: DocsLayout, SearchDialog, SearchButton, TableOfContents, PrevNextNav
-- [page-templates.md](references/page-templates.md) — Section skeletons for 6 page types, content source mapping, style influence matrix
+- [templates.md](references/templates.md) — Large code templates: DocsLayout, SearchDialog, SearchButton, TableOfContents, PrevNextNav, **Diagram Templates (5 server-safe SVG archetypes: HorizontalStepFlow / LayeredArchitecture / DualPathDecision / HubAndSpokePanorama / EventTimeline)**
+- [page-templates.md](references/page-templates.md) — Section skeletons for 6 page types, recommended diagram archetype per page (cross-ref to §4.9), content source mapping, style influence matrix
 - [style-presets.md](references/style-presets.md) — 8 curated style presets with colors, typography, layout patterns
 - [standalone-mode.md](references/standalone-mode.md) — No-frontend workflow: output strategy, template selection, color scheme generation, demo HTML preview
-- [anti-patterns.md](references/anti-patterns.md) — Common mistakes and troubleshooting guide
+- [anti-patterns.md](references/anti-patterns.md) — 26 common mistakes (covers content, layout, update mode, diagrams) + troubleshooting guide + recovery steps

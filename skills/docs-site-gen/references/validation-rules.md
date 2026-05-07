@@ -11,6 +11,7 @@ After generation, run ALL checks in order. Do not skip any.
 - **5.2 AI-Friendly & SEO Validation** — Heading IDs, llms.txt, Server/Client split, JSON-LD, sitemap/robots, hreflang
 - **5.3 Content Quality Audit** — Re-verify claims, check specificity, bilingual quality
 - **5.4 Visual Review Prompt** — Tell user how to launch dev server and preview
+- **5.5 Cross-Cutting Guards** — Final sweep before CP3: diagram a11y + mock-data check, quantitative claim re-verification, stale tech token grep, i18n-None language match
 
 ## 5.0 Implementation Completeness Verification
 
@@ -238,10 +239,61 @@ Tell the user to run `pnpm dev` and:
 
 Report any errors and fix them before completing.
 
-**CHECKPOINT CP3**: Present the full validation results (technical + content audit) to the user with preview instructions. Include:
+## 5.5 Cross-Cutting Guards (Final Sweep)
+
+These guards lift specific Phase 4 / Update-Mode rules into Phase 5 so they're enforced even when first-time generation accidentally skips them. Run AFTER 5.0–5.3 and BEFORE the visual review prompt.
+
+### 5.5.1 Diagram Validation
+
+For every `<svg>` exported from `app/docs/_components/Diagrams.tsx` (or equivalent) and consumed on a page, verify:
+
+- [ ] Has `role="img"` attribute
+- [ ] Has a unique, project-specific `aria-label` (NOT "diagram", NOT lorem)
+- [ ] Renders during SSR (test: `curl <docs-page> 2>/dev/null | grep -c '<svg' > 0`)
+- [ ] Mock data has NO `Lorem`, `Foo`, `Bar`, `Item N`, `Event [A-Z]`, `Step \d` (without verb), `Engine A/B`, `T\d` placeholders — re-check against the bad/good table in `references/anti-patterns.md` #25
+- [ ] Uses brand colors that match the project's existing palette (no fresh hex values; verify against `tailwind.config.*` or design tokens file)
+- [ ] No labels clipped at viewBox edges (especially for radial / hub-and-spoke layouts at angles `±90°`). See `references/generation-rules.md` §4.9.6 for the verification recipe and `anti-patterns.md` #26 for the fix pattern.
+- [ ] Centralized in `_components/Diagrams.tsx` — not scattered as inline `<svg>` blocks across `content.tsx` files
+
+When this guard catches an issue, fix immediately (don't defer to "next pass" — diagrams without a11y or with placeholder mock data fail screen-reader and AI-summarization use cases).
+
+### 5.5.2 Quantitative Claim Re-Verification
+
+Even if Phase 2B.4.1 already produced a Quantitative Claim Table, run it ONCE more against the **rendered** docs (not the planning doc):
+
+1. Grep the generated content for numeric claims: `grep -oE '[0-9]+\+? (个|services|activities|handlers|API|endpoints|types?)' app/docs/**/content.tsx public/llms*.txt`
+2. For each match, identify the source-of-truth file (`src/app/viewRegistry.ts`, `electron/services/builtinAgents.ts`, etc.)
+3. Re-run the count using the recipes in `content-mining.md` Step 2B.4.1
+4. If the doc number disagrees with code by more than the `+` tolerance (≥10% off), update the doc
+
+Why this matters: between CP2 approval and Phase 4 generation, you may have copy-pasted a count from CLAUDE.md without re-verifying. This guard is the final stop before publish. Real-world example caught by this check: docs claimed "11 个 Activity" while `viewRegistry.ts` had 13 ActivityIds.
+
+### 5.5.3 Stale Tech Token Sweep
+
+For each token the project has explicitly retired (sources: `CLAUDE.md` "已移除"/"removed"/"deprecated" markers, ESLint `no-restricted-imports`, anti-regression CI gate workflows, saved memory entries), grep both code-generated docs AND `public/llms*.txt`:
+
+```bash
+# Replace TOKEN with each retired library/framework name
+grep -rin 'TOKEN' app/docs/ public/llms*.txt
+```
+
+Any hit must be rewritten to reflect the **current** stack before publishing. Pay special attention to `public/llms.txt` and `public/llms-full.txt` — they're the AI-readable mirror of the docs and aren't visible in normal QA, so they drift fastest.
+
+Real-world example: docs and llms.txt described the project as using "Fluent UI v9 ... Dockview 4.3+" months after both were ESLint-banned and removed from `package.json`.
+
+### 5.5.4 i18n-None Language Match
+
+When the project is `i18n-None` (inline text), verify all generated text matches the project's primary content language. If existing pages use Chinese inline strings, every new section title, body copy, button label, callout text, and JSX literal MUST be Chinese — never silently fall back to English. Verification: `grep -E '[一-龥]' app/docs/**/content.tsx | wc -l` should return a non-trivial count when the project is Chinese-first.
+
+## CP3 Output
+
+**CHECKPOINT CP3**: Present the full validation results (technical + content audit + cross-cutting guards) to the user with preview instructions. Include:
 - Technical check results (pass/fail)
 - Content verification table (claims checked, any removed)
 - Specificity improvements made
+- **Diagram a11y + mock-data sweep results**
+- **Quantitative claim re-verification table** (claims, source-of-truth, current count, status)
+- **Stale tech token sweep** (tokens checked, any hits found and fixed)
 - Preview instructions for visual review
 
 This is the final checkpoint — the user should visually review the docs before accepting.
